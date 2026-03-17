@@ -23,17 +23,25 @@ dotenv.config();
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://hospital-ecosystem-clean.vercel.app"
+];
+
 app.use(helmet());
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://hospital-ecosystem-v2.vercel.app"
-    ],
+    origin: allowedOrigins,
     credentials: true
   })
 );
-app.options("*", cors());
+app.options(
+  "*",
+  cors({
+    origin: allowedOrigins,
+    credentials: true
+  })
+);
 app.use(express.json({ limit: "10kb" }));
 
 const limiter = rateLimit({
