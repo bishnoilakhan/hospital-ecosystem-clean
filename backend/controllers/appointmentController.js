@@ -7,10 +7,17 @@ const Patient = require("../models/Patient");
 const Hospital = require("../models/Hospital");
 const AccessControl = require("../models/AccessControl");
 const { getIO } = require("../socket");
+const { analyzeSymptoms } = require("../utils/triage");
 
 const createAppointment = async (req, res) => {
   try {
-    const { patientHealthId, doctorId, date, priorityScore } = req.body;
+    const { patientHealthId, doctorId, date, symptoms } = req.body;
+
+    if (!symptoms || symptoms.trim() === "") {
+      return res.status(400).json({
+        message: "Symptoms are required for appointment"
+      });
+    }
 
     if (!doctorId || !date) {
       return res.status(400).json({ message: "doctorId and date are required" });
@@ -96,6 +103,11 @@ const createAppointment = async (req, res) => {
 
     const queueNumber = lastAppointment ? lastAppointment.queueNumber + 1 : 1;
 
+    const triageData = analyzeSymptoms(symptoms);
+    const derivedDepartment = triageData.department || "General Medicine";
+    const derivedPriorityScore =
+      typeof triageData.priorityScore === "number" ? triageData.priorityScore : 5;
+
     const appointment = await Appointment.create({
       patientHealthId: resolvedPatientHealthId,
       doctorId,
@@ -103,7 +115,9 @@ const createAppointment = async (req, res) => {
       status: "scheduled",
       hospitalId: resolvedHospitalId,
       queueNumber,
-      priorityScore: typeof priorityScore === "number" ? priorityScore : 5
+      priorityScore: derivedPriorityScore,
+      symptoms: symptoms.trim(),
+      department: derivedDepartment
     });
 
     const existingAccess = await AccessControl.findOne({
@@ -153,7 +167,9 @@ const getDoctorAppointments = async (req, res) => {
         path: "doctorId",
         populate: { path: "userId", model: "User", select: "name" }
       })
-      .select("patientHealthId status date doctorId hospitalId queueNumber priorityScore");
+      .select(
+        "patientHealthId status date doctorId hospitalId queueNumber priorityScore symptoms department"
+      );
     const healthIds = appointments.map((appointment) => appointment.patientHealthId).filter(Boolean);
     const doctorIds = appointments
       .map((appointment) => appointment.doctorId?._id || appointment.doctorId)
@@ -186,9 +202,10 @@ const getDoctorAppointments = async (req, res) => {
       status: appointment.status,
       queueNumber: appointment.queueNumber,
       priorityScore: appointment.priorityScore,
+      symptoms: appointment.symptoms || "",
       doctorName:
         doctorMap[(appointment.doctorId?._id || appointment.doctorId)?.toString()] || "Unknown",
-      department: appointment.doctorId?.department || "N/A",
+      department: appointment.department || appointment.doctorId?.department || "N/A",
       hospitalId: appointment.hospitalId || appointment.doctorId?.hospitalId || null,
       hospitalName: appointment.hospitalId
         ? hospitalMap[appointment.hospitalId.toString()] || "Unknown"
@@ -382,7 +399,9 @@ const getTodayAppointments = async (req, res) => {
         select: "department userId",
         populate: { path: "userId", select: "name" }
       })
-      .select("patientHealthId date status doctorId hospitalId queueNumber priorityScore");
+      .select(
+        "patientHealthId date status doctorId hospitalId queueNumber priorityScore symptoms department"
+      );
 
     const healthIds = appointments.map((appointment) => appointment.patientHealthId).filter(Boolean);
     const doctorIds = appointments
@@ -424,6 +443,8 @@ const getTodayAppointments = async (req, res) => {
           : "Unknown",
         queueNumber: appointment.queueNumber,
         priorityScore: appointment.priorityScore,
+        symptoms: appointment.symptoms || "",
+        department: appointment.department || appointment.doctorId?.department || "N/A",
         time: appointment.date,
         status: appointment.status
       };
@@ -455,7 +476,7 @@ const getPatientAppointments = async (req, res) => {
         select: "department userId",
         populate: { path: "userId", select: "name" }
       })
-      .select("date status doctorId hospitalId queueNumber priorityScore");
+      .select("date status doctorId hospitalId queueNumber priorityScore symptoms department");
 
     const doctorIds = appointments
       .map((appointment) => appointment.doctorId?._id || appointment.doctorId)
@@ -477,13 +498,14 @@ const getPatientAppointments = async (req, res) => {
     const formatted = appointments.map((appointment) => ({
       doctorName:
         doctorMap[(appointment.doctorId?._id || appointment.doctorId)?.toString()] || "Unknown",
-      department: appointment.doctorId?.department || "N/A",
+      department: appointment.department || appointment.doctorId?.department || "N/A",
       hospitalId: appointment.hospitalId || appointment.doctorId?.hospitalId || null,
       hospitalName: appointment.hospitalId
         ? hospitalMap[appointment.hospitalId.toString()] || "Unknown"
         : "Unknown",
       queueNumber: appointment.queueNumber,
       priorityScore: appointment.priorityScore,
+      symptoms: appointment.symptoms || "",
       date: appointment.date,
       status: appointment.status
     }));

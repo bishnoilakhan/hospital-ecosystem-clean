@@ -177,9 +177,8 @@ export const updateUser = async (userId, payload, token) => {
   return handleResponse(response);
 };
 
-export const getDoctors = async (token, hospitalId = "") => {
-  const query = hospitalId ? `?hospitalId=${encodeURIComponent(hospitalId)}` : "";
-  const response = await fetch(`${API_BASE_URL}/doctors${query}`, {
+export const getDoctors = async (token) => {
+  const response = await fetch(`${API_BASE_URL}/doctors`, {
     headers: {
       Authorization: `Bearer ${token}`
     }

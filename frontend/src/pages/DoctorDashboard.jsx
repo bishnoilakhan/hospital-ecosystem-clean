@@ -613,6 +613,12 @@ const DoctorDashboard = () => {
                         <p className="text-sm text-gray-600">
                           Queue #{currentPatientInQueue.queueNumber || "—"}
                         </p>
+                        <div className="mt-2">
+                          <p className="text-xs font-medium text-gray-500">Symptoms</p>
+                          <p className="text-sm text-gray-700 line-clamp-2">
+                            {currentPatientInQueue.symptoms || "No symptoms provided"}
+                          </p>
+                        </div>
                         {isEmergency(currentPatientInQueue.priorityScore || 0) && (
                           <p className="mt-2 text-sm font-medium text-red-600">
                             Emergency patient under consultation
@@ -726,6 +732,12 @@ const DoctorDashboard = () => {
                               </p>
                               <p className="text-xs text-gray-500">
                                 {formatTime(appointment.date)} • Queue #{appointment.queueNumber || "—"}
+                              </p>
+                              <p className="mt-1 text-xs text-gray-500">
+                                {appointment.symptoms || "No symptoms provided"}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {appointment.department || "General Medicine"}
                               </p>
                             </div>
                             <div className="flex items-center gap-2">
@@ -969,6 +981,18 @@ const DoctorDashboard = () => {
                   <h2 className="mb-3 text-lg font-semibold text-slate-900">
                     {formatLabel("Consultation")}
                   </h2>
+                  <div className="rounded-lg bg-gray-50 p-3">
+                    <p className="text-sm font-medium text-gray-700">Symptoms</p>
+                    <p className="mt-1 text-sm text-gray-600">
+                      {selectedAppointment?.symptoms || "No symptoms provided"}
+                    </p>
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-xs font-medium text-gray-500">Department</p>
+                    <p className="text-sm text-gray-700">
+                      {selectedAppointment?.department || "General Medicine"}
+                    </p>
+                  </div>
                   <form onSubmit={handleAddRecord} className="grid gap-4">
                     <div>
                       <p className="text-xs font-semibold text-slate-600">

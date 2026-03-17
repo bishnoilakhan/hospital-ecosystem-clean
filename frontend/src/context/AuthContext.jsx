@@ -19,6 +19,32 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState(initialRole);
   const [hospitalId, setHospitalId] = useState(initialHospitalId);
 
+  try {
+    const decoded = token ? JSON.parse(atob(token.split(".")[1])) : null;
+
+    if (decoded && !decoded.hospitalId) {
+      console.warn("Old token detected — clearing session");
+
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("hospitalId");
+
+      setToken(null);
+      setRole(null);
+      setHospitalId(null);
+    }
+  } catch (error) {
+    console.warn("Invalid token — clearing session");
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("hospitalId");
+
+    setToken(null);
+    setRole(null);
+    setHospitalId(null);
+  }
+
   const login = (nextToken, nextRole, nextHospitalId) => {
     try {
       localStorage.setItem("token", nextToken);

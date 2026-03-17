@@ -35,6 +35,9 @@ const MedicalTimeline = ({ records = [] }) => {
                 {record.hospitalName || "Unknown"}
               </span>
             </p>
+            <p className="text-sm text-gray-500">
+              Symptoms: {record.symptoms || "N/A"}
+            </p>
             <div className="mt-2 text-sm text-slate-600">
               <span className="font-medium text-slate-700">
                 {formatLabel("Prescription")}:

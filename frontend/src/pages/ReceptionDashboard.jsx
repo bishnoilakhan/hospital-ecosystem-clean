@@ -27,7 +27,8 @@ const ReceptionDashboard = () => {
   const [appointmentForm, setAppointmentForm] = useState({
     patientHealthId: "",
     doctorId: "",
-    date: ""
+    date: "",
+    symptoms: ""
   });
   const [doctorQuery, setDoctorQuery] = useState("");
   const [doctors, setDoctors] = useState([]);
@@ -97,7 +98,7 @@ const ReceptionDashboard = () => {
     if (!token) return;
     try {
       const data = await getDoctors(token);
-      setDoctors(data.doctors || []);
+      setDoctors(data.data || []);
     } catch (error) {
       toast.error("Failed to load doctors");
     }
@@ -135,16 +136,29 @@ const ReceptionDashboard = () => {
       toast.error("Select patient, doctor, and date");
       return;
     }
+    if (!appointmentForm.symptoms.trim()) {
+      toast.error("Symptoms are required");
+      return;
+    }
     setCreating(true);
     try {
       const payload = {
         patientHealthId: appointmentForm.patientHealthId,
         doctorId: appointmentForm.doctorId,
         date: new Date(appointmentForm.date).toISOString(),
-        priorityScore: Number(priority)
+        priorityScore: Number(priority),
+        symptoms: appointmentForm.symptoms
       };
       const data = await createAppointment(payload, token);
-      toast.success("Appointment created successfully");
+      const assignedDepartment =
+        data.appointment?.department || data.department || "General Medicine";
+      const assignedPriority =
+        typeof data.appointment?.priorityScore === "number"
+          ? data.appointment.priorityScore
+          : data.priorityScore;
+      const priorityLabel =
+        assignedPriority >= 7 ? "High Priority" : assignedPriority >= 5 ? "Medium Priority" : "Low Priority";
+      toast.success(`Assigned to ${assignedDepartment} (${priorityLabel})`);
       fetchStats();
       fetchTodayAppointments();
     } catch (error) {
@@ -266,7 +280,7 @@ const ReceptionDashboard = () => {
       if (doctorQuery.trim().length > 2) {
         const filtered = doctors.filter(
           (doctor) =>
-            doctor.name?.toLowerCase().includes(doctorQuery.toLowerCase()) ||
+            doctor.userId?.name?.toLowerCase().includes(doctorQuery.toLowerCase()) ||
             doctor.department?.toLowerCase().includes(doctorQuery.toLowerCase())
         );
         setDoctorSuggestions(filtered);
@@ -290,7 +304,9 @@ const ReceptionDashboard = () => {
   const handleSelectDoctor = (doctor) => {
     setSelectedDoctor(doctor);
     setDoctorQuery(
-      `${formatDoctorName(doctor.name || "")} - ${formatDepartment(doctor.department || "")}`
+      `${formatDoctorName(doctor.userId?.name || "")} - ${formatDepartment(
+        doctor.department || ""
+      )}`
     );
     setAppointmentForm((prev) => ({
       ...prev,
@@ -485,6 +501,11 @@ const ReceptionDashboard = () => {
                 {selectedPatient ? formatName(selectedPatient.name) : "Not selected"}
               </span>
             </div>
+            {!doctors || doctors.length === 0 ? (
+              <p className="text-sm text-gray-500 mt-2">
+                No doctors available in your hospital
+              </p>
+            ) : null}
             <div className="relative">
               <input
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
@@ -501,7 +522,7 @@ const ReceptionDashboard = () => {
                       onClick={() => handleSelectDoctor(doctor)}
                       className="block w-full px-4 py-2 text-left text-xs text-slate-700 hover:bg-gray-100"
                     >
-                      {formatDoctorName(doctor.name || "Unknown")} —{" "}
+                      {formatDoctorName(doctor.userId?.name || "Unknown")} —{" "}
                       {formatDepartment(doctor.department || "N/A")}
                     </button>
                   ))}
@@ -513,7 +534,7 @@ const ReceptionDashboard = () => {
                 <span>
                   Selected Doctor:{" "}
                   <span className="font-semibold text-slate-800">
-                    {formatDoctorName(selectedDoctor.name || "Unknown")}
+                    {formatDoctorName(selectedDoctor.userId?.name || "Unknown")}
                   </span>{" "}
                   — {formatDepartment(selectedDoctor.department || "N/A")}
                 </span>
@@ -533,6 +554,14 @@ const ReceptionDashboard = () => {
               value={appointmentForm.date}
               onChange={handleAppointmentChange}
               required
+            />
+            <textarea
+              className="min-h-[90px] rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              name="symptoms"
+              value={appointmentForm.symptoms}
+              onChange={handleAppointmentChange}
+              required
+              placeholder="Enter patient symptoms..."
             />
             <select
               className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
@@ -578,6 +607,8 @@ const ReceptionDashboard = () => {
                     <th className="py-2">Time</th>
                     <th className="py-2">Patient</th>
                     <th className="py-2">Doctor</th>
+                    <th className="py-2">Symptoms</th>
+                    <th className="py-2">Department</th>
                     <th className="py-2">Status</th>
                     <th className="py-2">Queue</th>
                     <th className="py-2">Action</th>
@@ -599,6 +630,23 @@ const ReceptionDashboard = () => {
                       </td>
                       <td className="py-2">
                         {formatDoctorName(appointment.doctorName || "Unknown")}
+                      </td>
+                      <td className="py-2 text-sm text-gray-600">
+                        {appointment.symptoms ? (
+                          <div
+                            className="cursor-pointer"
+                            title={appointment.symptoms}
+                          >
+                            {appointment.symptoms.length > 30
+                              ? `${appointment.symptoms.slice(0, 30)}...`
+                              : appointment.symptoms}
+                          </div>
+                        ) : (
+                          "N/A"
+                        )}
+                      </td>
+                      <td className="py-2 text-sm text-gray-600">
+                        {appointment.department || "General Medicine"}
                       </td>
                       <td className="py-2">
                         <span

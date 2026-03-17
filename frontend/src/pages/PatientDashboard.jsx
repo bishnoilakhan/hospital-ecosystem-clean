@@ -27,7 +27,8 @@ const PatientDashboard = () => {
   const { token } = useAuth();
   const [appointmentForm, setAppointmentForm] = useState({
     doctorId: "",
-    date: ""
+    date: "",
+    symptoms: ""
   });
   const [profile, setProfile] = useState(null);
   const [appointments, setAppointments] = useState([]);
@@ -109,10 +110,19 @@ const PatientDashboard = () => {
     try {
       const payload = {
         doctorId: appointmentForm.doctorId,
-        date: new Date(appointmentForm.date).toISOString()
+        date: new Date(appointmentForm.date).toISOString(),
+        symptoms: appointmentForm.symptoms
       };
-      await createAppointment(payload, token);
-      toast.success("Appointment booked");
+      const data = await createAppointment(payload, token);
+      const assignedDepartment =
+        data.appointment?.department || data.department || "General Medicine";
+      const assignedPriority =
+        typeof data.appointment?.priorityScore === "number"
+          ? data.appointment.priorityScore
+          : data.priorityScore;
+      const priorityLabel =
+        assignedPriority >= 7 ? "High Priority" : assignedPriority >= 5 ? "Medium Priority" : "Low Priority";
+      toast.success(`Assigned to ${assignedDepartment} (${priorityLabel})`);
       fetchStats();
       fetchMedicalRecords();
     } catch (error) {
@@ -192,13 +202,13 @@ const PatientDashboard = () => {
     fetchMedicalRecords();
   };
 
-  const fetchDoctors = async (hospitalId = "") => {
+  const fetchDoctors = async () => {
     if (!token) return;
     try {
-      const data = await getDoctors(token, hospitalId);
-      setDoctors(data.doctors || []);
-      if (!appointmentForm.doctorId && data.doctors?.length) {
-        setAppointmentForm((prev) => ({ ...prev, doctorId: data.doctors[0]._id }));
+      const data = await getDoctors(token);
+      setDoctors(data.data || []);
+      if (!appointmentForm.doctorId && data.data?.length) {
+        setAppointmentForm((prev) => ({ ...prev, doctorId: data.data[0]._id }));
       }
     } catch (error) {
       toast.error("Failed to load doctors");
@@ -212,7 +222,7 @@ const PatientDashboard = () => {
       setHospitals(data.data || []);
       if (!selectedHospital && data.data?.length) {
         setSelectedHospital(data.data[0]._id);
-        fetchDoctors(data.data[0]._id);
+        fetchDoctors();
       }
     } catch (error) {
       toast.error("Failed to load hospitals");
@@ -223,7 +233,7 @@ const PatientDashboard = () => {
     const hospitalId = event.target.value;
     setSelectedHospital(hospitalId);
     setAppointmentForm((prev) => ({ ...prev, doctorId: "" }));
-    await fetchDoctors(hospitalId);
+    await fetchDoctors();
   };
 
   useEffect(() => {
@@ -375,6 +385,14 @@ const PatientDashboard = () => {
                     {formatLabel("Your position in queue")}: Queue #
                     {appointment.queueNumber || "—"}
                   </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    <span className="font-medium">Symptoms:</span>{" "}
+                    {appointment.symptoms || "Not provided"}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    <span className="font-medium">Department:</span>{" "}
+                    {appointment.department || "GENERAL"}
+                  </p>
                   <span
                     className={`inline-block rounded px-2 py-1 text-xs font-semibold ${getStatusStyle(
                       appointment.status
@@ -432,6 +450,14 @@ const PatientDashboard = () => {
                   <p className="text-sm text-gray-600">
                     {formatLabel("Your position in queue")}: Queue #
                     {appointment.queueNumber || "—"}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    <span className="font-medium">Symptoms:</span>{" "}
+                    {appointment.symptoms || "Not provided"}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    <span className="font-medium">Department:</span>{" "}
+                    {appointment.department || "GENERAL"}
                   </p>
                   <span
                     className={`inline-block rounded px-2 py-1 text-xs font-semibold ${getStatusStyle(
@@ -493,6 +519,11 @@ const PatientDashboard = () => {
                   ))
                 )}
               </select>
+              {!doctors || doctors.length === 0 ? (
+                <p className="text-sm text-gray-500 mt-2">
+                  No doctors available in your hospital
+                </p>
+              ) : null}
               <select
                 className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
                 name="doctorId"
@@ -506,7 +537,7 @@ const PatientDashboard = () => {
                 ) : (
                   doctors.map((doctor) => (
                     <option key={doctor._id} value={doctor._id}>
-                      {formatDoctorName(doctor.name || "Unknown")} -{" "}
+                      {formatDoctorName(doctor.userId?.name || "Unknown")} -{" "}
                       {doctor.department ? formatDepartment(doctor.department) : "N/A"}
                     </option>
                   ))
@@ -519,6 +550,14 @@ const PatientDashboard = () => {
                 value={appointmentForm.date}
                 onChange={handleAppointmentChange}
                 required
+              />
+              <textarea
+                className="min-h-[90px] rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                name="symptoms"
+                value={appointmentForm.symptoms}
+                onChange={handleAppointmentChange}
+                required
+                placeholder="Enter patient symptoms..."
               />
               <button
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"

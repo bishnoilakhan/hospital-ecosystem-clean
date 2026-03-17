@@ -30,6 +30,16 @@ const appointmentSchema = new mongoose.Schema(
       type: Number,
       default: 5
     },
+    symptoms: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    department: {
+      type: String,
+      trim: true,
+      default: "General Medicine"
+    },
     hospitalId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Hospital",

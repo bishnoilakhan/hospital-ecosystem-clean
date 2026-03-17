@@ -31,6 +31,14 @@ const AppointmentCard = ({
       <p className="mt-3 text-sm text-slate-500">
         {appointment.date ? new Date(appointment.date).toLocaleString() : "Date not set"}
       </p>
+      <p className="mt-1 text-sm text-gray-600">
+        <span className="font-medium">Symptoms:</span>{" "}
+        {appointment.symptoms || "Not provided"}
+      </p>
+      <p className="mt-1 text-sm text-gray-600">
+        <span className="font-medium">Department:</span>{" "}
+        {appointment.department || "GENERAL"}
+      </p>
       <div className="mt-4 grid gap-2">
         {onOpenConsultation && (
           <button

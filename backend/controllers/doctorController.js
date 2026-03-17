@@ -6,34 +6,27 @@ const Hospital = require("../models/Hospital");
 
 const getDoctors = async (req, res) => {
   try {
-    const { hospitalId } = req.query;
-
-    const filter = {};
-    if (hospitalId) {
-      if (!isValidObjectId(hospitalId)) {
-        return res.status(400).json({ message: "Invalid id" });
-      }
-      filter.hospitalId = hospitalId;
+    if (!req.user || !req.user.hospitalId) {
+      return res.status(403).json({
+        message: "Unauthorized: hospital context missing"
+      });
     }
 
-    const doctors = await Doctor.find(filter)
-      .select("department experience availability userId hospitalId")
-      .populate("userId", "name email");
+    const userHospitalId = req.user?.hospitalId;
 
-    const formatted = doctors.map((doctor) => ({
-      _id: doctor._id,
-      name: doctor.userId?.name || "Unknown",
-      email: doctor.userId?.email || "N/A",
-      userId: doctor.userId?._id || null,
-      department: doctor.department,
-      experience: doctor.experience,
-      availability: doctor.availability,
-      hospitalId: doctor.hospitalId || null
-    }));
+    if (!userHospitalId) {
+      return res.status(400).json({ message: "User hospital not found" });
+    }
 
-    return res.status(200).json({ doctors: formatted });
+    const doctors = await Doctor.find({ hospitalId: userHospitalId }).populate(
+      "userId",
+      "name email"
+    );
+
+    return res.status(200).json({ data: doctors });
   } catch (error) {
-    return res.status(500).json({ message: "Failed to fetch doctors", error: error.message });
+    console.error(error);
+    return res.status(500).json({ message: "Failed to fetch doctors" });
   }
 };
 
