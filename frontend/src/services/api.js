@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://hospital-ecosystem-v2.onrender.com/api";
+const API_BASE_URL = "https://hospital-ecosystem-clean-backend.onrender.com/api";
 
 const handleResponse = async (response) => {
   const data = await response.json();

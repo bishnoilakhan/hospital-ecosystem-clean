@@ -26,7 +26,7 @@ import {
 import EmergencyBadge from "../components/EmergencyBadge";
 import { getPriorityColor, getPriorityLabel, isEmergency } from "../utils/priority";
 
-const API_BASE_URL = "https://hospital-ecosystem-v2.onrender.com/api";
+const API_BASE_URL = "https://hospital-ecosystem-clean-backend.onrender.com/api";
 
 const DoctorDashboard = () => {
   const { token } = useAuth();

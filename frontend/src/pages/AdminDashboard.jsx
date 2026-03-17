@@ -90,7 +90,7 @@ const AdminDashboard = () => {
     setCreatingStaff(true);
     try {
       const response = await fetch(
-        "https://hospital-ecosystem-v2.onrender.com/api/admin/create-staff",
+        "https://hospital-ecosystem-clean-backend.onrender.com/api/admin/create-staff",
         {
           method: "POST",
           headers: {
