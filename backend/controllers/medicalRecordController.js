@@ -46,7 +46,7 @@ const addMedicalRecord = async (req, res) => {
 
     const access = await AccessControl.findOne({
       patientHealthId,
-      hospitalId: resolvedHospitalId,
+      hospitalId: req.user.hospitalId,
       granted: true,
       expiresAt: { $gt: new Date() }
     });
@@ -112,7 +112,7 @@ const getPatientRecords = async (req, res) => {
 
       const access = await AccessControl.findOne({
         patientHealthId,
-        hospitalId: doctor.hospitalId,
+        hospitalId: req.user.hospitalId,
         granted: true,
         expiresAt: { $gt: new Date() }
       });
