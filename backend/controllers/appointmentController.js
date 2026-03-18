@@ -132,13 +132,15 @@ const createAppointment = async (req, res) => {
 
     const existingAccess = await AccessControl.findOne({
       patientHealthId: resolvedPatientHealthId,
-      hospitalId: resolvedHospitalId
+      hospitalId: resolvedHospitalId,
+      doctorId: doctor.userId
     });
 
     if (!existingAccess) {
       await AccessControl.create({
         patientHealthId: resolvedPatientHealthId,
         hospitalId: resolvedHospitalId,
+        doctorId: doctor.userId,
         granted: true,
         grantedBy: "system",
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)

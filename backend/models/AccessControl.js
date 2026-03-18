@@ -13,6 +13,11 @@ const accessControlSchema = new mongoose.Schema(
       ref: "Hospital",
       required: true
     },
+    doctorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true
+    },
     granted: {
       type: Boolean,
       default: false

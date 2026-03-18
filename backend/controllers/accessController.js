@@ -24,7 +24,8 @@ const requestAccess = async (req, res) => {
 
     const existingAccess = await AccessControl.findOne({
       patientHealthId,
-      hospitalId: doctor.hospitalId
+      hospitalId: doctor.hospitalId,
+      doctorId: req.user.id
     });
 
     if (existingAccess) {
@@ -34,6 +35,7 @@ const requestAccess = async (req, res) => {
     await AccessControl.create({
       patientHealthId,
       hospitalId: doctor.hospitalId,
+      doctorId: req.user.id,
       granted: false,
       grantedBy: null
     });
@@ -42,7 +44,7 @@ const requestAccess = async (req, res) => {
     io.emit("accessRequested", {
       patientHealthId,
       hospitalId: doctor.hospitalId,
-      doctorId: doctor._id
+      doctorId: req.user.id
     });
 
     return res.status(201).json({ message: "Access request sent" });
@@ -101,10 +103,11 @@ const approveAccess = async (req, res) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    access.granted = true;
-    access.grantedBy = "patient";
-    access.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    await access.save();
+    await AccessControl.findByIdAndUpdate(id, {
+      granted: true,
+      grantedBy: "patient",
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    });
 
     const io = getIO();
     io.emit("accessGranted", {
