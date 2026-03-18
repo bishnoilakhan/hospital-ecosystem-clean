@@ -260,6 +260,10 @@ const DoctorDashboard = () => {
   }, [accessRequired]);
 
   useEffect(() => {
+    const handleConnect = () => {
+      console.log("Socket connected:", socket.id);
+    };
+
     const handleAppointmentCheckedIn = (data) => {
       const doctorId = doctorIdRef.current;
       if (!doctorId || !data?.doctorId) {
@@ -293,6 +297,7 @@ const DoctorDashboard = () => {
       }
     };
 
+    socket.on("connect", handleConnect);
     socket.on("appointmentCheckedIn", handleAppointmentCheckedIn);
     socket.on("appointmentCreated", handleAppointmentCreated);
     socket.on("accessApproved", handleAccessApproved);
@@ -310,6 +315,7 @@ const DoctorDashboard = () => {
     socket.on("appointmentCompleted", handleAppointmentCompleted);
 
     return () => {
+      socket.off("connect", handleConnect);
       socket.off("appointmentCheckedIn", handleAppointmentCheckedIn);
       socket.off("appointmentCreated", handleAppointmentCreated);
       socket.off("accessApproved", handleAccessApproved);

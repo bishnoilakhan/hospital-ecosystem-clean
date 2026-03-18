@@ -1,8 +1,8 @@
 import { io } from "socket.io-client";
 
-const SOCKET_URL = "https://hospital-ecosystem-clean-backend.onrender.com";
-const socket = io(SOCKET_URL, {
-  transports: ["websocket"]
+const socket = io(import.meta.env.VITE_BACKEND_URL, {
+  transports: ["websocket"],
+  withCredentials: true
 });
 
 export default socket;

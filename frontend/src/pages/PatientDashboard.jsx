@@ -263,6 +263,10 @@ const PatientDashboard = () => {
   }, [token]);
 
   useEffect(() => {
+    const handleConnect = () => {
+      console.log("Socket connected:", socket.id);
+    };
+
     const handleAppointmentCreated = (data) => {
       if (!data?.patientId || !profile?.healthId) {
         fetchAppointments();
@@ -277,10 +281,12 @@ const PatientDashboard = () => {
       fetchMedicalRecords();
     };
 
+    socket.on("connect", handleConnect);
     socket.on("appointmentCreated", handleAppointmentCreated);
     socket.on("accessApproved", handleAccessApproved);
 
     return () => {
+      socket.off("connect", handleConnect);
       socket.off("appointmentCreated", handleAppointmentCreated);
       socket.off("accessApproved", handleAccessApproved);
     };

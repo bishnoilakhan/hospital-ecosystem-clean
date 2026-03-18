@@ -242,6 +242,10 @@ const ReceptionDashboard = () => {
   }, [token]);
 
   useEffect(() => {
+    const handleConnect = () => {
+      console.log("Socket connected:", socket.id);
+    };
+
     const handleAppointmentCreated = (data) => {
       if (!hospitalId || !data?.hospitalId) {
         fetchTodayAppointments();
@@ -266,10 +270,12 @@ const ReceptionDashboard = () => {
       }
     };
 
+    socket.on("connect", handleConnect);
     socket.on("appointmentCreated", handleAppointmentCreated);
     socket.on("appointmentCheckedIn", handleAppointmentCheckedIn);
 
     return () => {
+      socket.off("connect", handleConnect);
       socket.off("appointmentCreated", handleAppointmentCreated);
       socket.off("appointmentCheckedIn", handleAppointmentCheckedIn);
     };
