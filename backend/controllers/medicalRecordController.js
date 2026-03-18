@@ -151,6 +151,7 @@ const getPatientRecords = async (req, res) => {
 
     return res.status(200).json({
       message: "Medical records fetched",
+      data: formatted,
       records: formatted
     });
   } catch (error) {

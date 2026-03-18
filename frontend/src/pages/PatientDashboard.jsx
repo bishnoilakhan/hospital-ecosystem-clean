@@ -111,6 +111,18 @@ const PatientDashboard = () => {
 
   const handleCreateAppointment = async (event) => {
     event.preventDefault();
+    if (!appointmentForm.doctorId) {
+      toast.error("Please select a doctor");
+      return;
+    }
+    if (!appointmentForm.date) {
+      toast.error("Please select a date");
+      return;
+    }
+    if (!appointmentForm.symptoms.trim()) {
+      toast.error("Please enter symptoms");
+      return;
+    }
     setBooking(true);
     try {
       const payload = {
@@ -118,7 +130,6 @@ const PatientDashboard = () => {
         date: new Date(appointmentForm.date).toISOString(),
         symptoms: appointmentForm.symptoms
       };
-      console.log("APPOINTMENT PAYLOAD:", payload);
       const data = await createAppointment(payload, token);
       const assignedDepartment =
         data.appointment?.department || data.department || "General Medicine";
@@ -131,6 +142,7 @@ const PatientDashboard = () => {
       toast.success(`Assigned to ${assignedDepartment} (${priorityLabel})`);
       fetchStats();
       fetchMedicalRecords();
+      fetchAppointments();
     } catch (error) {
       toast.error("Something went wrong");
     } finally {
@@ -146,7 +158,7 @@ const PatientDashboard = () => {
     setLoadingRecords(true);
     try {
       const data = await getPatientRecords(token);
-      setRecords(data.records || []);
+      setRecords(data.data || data.records || []);
     } catch (error) {
       toast.error("Something went wrong");
     } finally {
@@ -162,7 +174,7 @@ const PatientDashboard = () => {
     setLoadingRequests(true);
     try {
       const data = await getAccessRequests(token);
-      setAccessRequests(data.data || []);
+      setAccessRequests(data.data || data.requests || []);
     } catch (error) {
       toast.error("Failed to load access requests");
     } finally {
@@ -197,7 +209,7 @@ const PatientDashboard = () => {
     }
     try {
       const data = await getPatientAppointments(token);
-      setAppointments(data.appointments || []);
+      setAppointments(data.data || data.appointments || []);
     } catch (error) {
       toast.error("Failed to load appointments");
     }
@@ -212,8 +224,7 @@ const PatientDashboard = () => {
     if (!token) return;
     try {
       const data = await getDoctors(token);
-      console.log("DOCTORS:", data);
-      setDoctors(data || []);
+      setDoctors(data.data || data || []);
     } catch (error) {
       toast.error("Failed to load doctors");
     }
@@ -223,9 +234,10 @@ const PatientDashboard = () => {
     if (!token) return;
     try {
       const data = await getHospitals(token);
-      setHospitals(data.data || []);
-      if (!selectedHospital && data.data?.length) {
-        setSelectedHospital(data.data[0]._id);
+      const hospitalsList = data.data || data.hospitals || [];
+      setHospitals(hospitalsList);
+      if (!selectedHospital && hospitalsList.length) {
+        setSelectedHospital(hospitalsList[0]._id);
         fetchDoctors();
       }
     } catch (error) {

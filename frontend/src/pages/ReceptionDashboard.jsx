@@ -87,7 +87,7 @@ const ReceptionDashboard = () => {
         return;
       }
       const data = await searchPatients(token, query);
-      setPatients(data.patients || []);
+      setPatients(data.data || data.patients || []);
     } catch (error) {
       toast.error("Failed to fetch patient");
     } finally {
@@ -99,7 +99,7 @@ const ReceptionDashboard = () => {
     if (!token) return;
     try {
       const data = await getDoctors(token);
-      setDoctors(data.data || []);
+      setDoctors(data.data || data || []);
     } catch (error) {
       toast.error("Failed to load doctors");
     }
@@ -109,7 +109,7 @@ const ReceptionDashboard = () => {
     if (!token) return;
     try {
       const data = await getTodayAppointments(token);
-      setTodayAppointments(data.appointments || []);
+      setTodayAppointments(data.data || data.appointments || []);
     } catch (error) {
       toast.error("Failed to load today's appointments");
     }

@@ -21,7 +21,6 @@ export const AuthProvider = ({ children }) => {
 
   const login = (nextToken, nextRole, nextHospitalId) => {
     const normalizedRole = nextRole?.toLowerCase() || null;
-    console.log("STORING ROLE:", normalizedRole);
     try {
       localStorage.setItem("token", nextToken);
       if (normalizedRole) {

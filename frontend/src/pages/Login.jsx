@@ -17,8 +17,6 @@ const Login = () => {
     setSubmitting(true);
     try {
       const data = await loginUser({ email, password });
-      console.log("Login response:", data);
-
       if (!data?.role) {
         console.error("Role missing in response");
         toast.error("Login failed: role missing");
@@ -26,7 +24,6 @@ const Login = () => {
       }
 
       const normalizedRole = data?.role?.toLowerCase();
-      console.log("LOGIN ROLE:", normalizedRole);
       login(data?.token, normalizedRole, data?.hospitalId);
       toast.success("Login successful");
 

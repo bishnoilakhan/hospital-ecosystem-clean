@@ -18,7 +18,7 @@ const getDoctors = async (req, res) => {
 
     const doctors = await Doctor.find(query).populate("userId", "name");
 
-    return res.status(200).json(doctors);
+    return res.status(200).json({ data: doctors });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server error" });
@@ -101,7 +101,7 @@ const getDoctorUsersWithoutProfile = async (req, res) => {
       (user) => !usedUserIds.includes(user._id.toString())
     );
 
-    return res.status(200).json({ doctors: availableDoctors });
+    return res.status(200).json({ data: availableDoctors, doctors: availableDoctors });
   } catch (error) {
     return res
       .status(500)

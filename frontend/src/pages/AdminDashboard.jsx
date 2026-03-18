@@ -133,7 +133,7 @@ const AdminDashboard = () => {
     if (!token) return;
     try {
       const data = await getDoctorUsersWithoutProfile(token);
-      setDoctors(data.doctors || []);
+      setDoctors(data.data || data.doctors || []);
     } catch (error) {
       toast.error("Failed to load doctors");
     }
@@ -143,7 +143,7 @@ const AdminDashboard = () => {
     if (!token) return;
     try {
       const data = await getUsers(token);
-      setUsers(data.users || []);
+      setUsers(data.data || data.users || []);
     } catch (error) {
       toast.error("Failed to load users");
     }

@@ -178,7 +178,7 @@ const getDoctorAppointments = async (req, res) => {
         populate: { path: "userId", model: "User", select: "name" }
       })
       .select(
-        "patientHealthId status date doctorId hospitalId queueNumber priorityScore symptoms department"
+        "patientHealthId status date doctorId hospitalId queueNumber priorityScore symptoms rawSymptoms structuredSymptoms department"
       );
     const healthIds = appointments.map((appointment) => appointment.patientHealthId).filter(Boolean);
     const doctorIds = appointments
@@ -233,6 +233,7 @@ const getDoctorAppointments = async (req, res) => {
 
     return res.status(200).json({
       message: "Doctor appointments fetched",
+      data: formatted,
       appointments: formatted
     });
   } catch (error) {
@@ -412,7 +413,7 @@ const getTodayAppointments = async (req, res) => {
         populate: { path: "userId", select: "name" }
       })
       .select(
-        "patientHealthId date status doctorId hospitalId queueNumber priorityScore symptoms department"
+        "patientHealthId date status doctorId hospitalId queueNumber priorityScore symptoms rawSymptoms structuredSymptoms department"
       );
 
     const healthIds = appointments.map((appointment) => appointment.patientHealthId).filter(Boolean);
@@ -464,7 +465,7 @@ const getTodayAppointments = async (req, res) => {
       };
     });
 
-    return res.status(200).json({ appointments: formatted });
+    return res.status(200).json({ data: formatted, appointments: formatted });
   } catch (error) {
     return res
       .status(500)
@@ -490,7 +491,9 @@ const getPatientAppointments = async (req, res) => {
         select: "department userId",
         populate: { path: "userId", select: "name" }
       })
-      .select("date status doctorId hospitalId queueNumber priorityScore symptoms department");
+      .select(
+        "date status doctorId hospitalId queueNumber priorityScore symptoms rawSymptoms structuredSymptoms department"
+      );
 
     const doctorIds = appointments
       .map((appointment) => appointment.doctorId?._id || appointment.doctorId)
@@ -526,7 +529,7 @@ const getPatientAppointments = async (req, res) => {
       status: appointment.status
     }));
 
-    return res.status(200).json({ appointments: formatted });
+    return res.status(200).json({ data: formatted, appointments: formatted });
   } catch (error) {
     return res.status(500).json({
       message: "Failed to fetch patient appointments",

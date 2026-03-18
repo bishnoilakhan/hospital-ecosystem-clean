@@ -167,11 +167,12 @@ const DoctorDashboard = () => {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data?.message || "Failed to fetch appointments");
-      setAppointments(data.appointments || []);
-      if (data.appointments?.length) {
-        doctorIdRef.current = data.appointments[0]?.doctorId || doctorIdRef.current;
+      const appointmentsList = data.data || data.appointments || [];
+      setAppointments(appointmentsList);
+      if (appointmentsList.length) {
+        doctorIdRef.current = appointmentsList[0]?.doctorId || doctorIdRef.current;
       }
-      const checkedInCount = (data.appointments || []).filter(
+      const checkedInCount = appointmentsList.filter(
         (appointment) => appointment.status === "checked-in"
       ).length;
       if (
@@ -182,7 +183,7 @@ const DoctorDashboard = () => {
       }
       prevCheckedInCount.current = checkedInCount;
       fetchStats();
-      return data.appointments || [];
+      return appointmentsList;
     } catch (error) {
       toast.error("Something went wrong");
       return [];
@@ -208,7 +209,7 @@ const DoctorDashboard = () => {
     const fetchResults = async () => {
       try {
         const data = await searchPatients(token, search.trim());
-        setSearchResults(data.patients || []);
+        setSearchResults(data.data || data.patients || []);
       } catch (error) {
         toast.error("Failed to load patients");
       }
@@ -300,7 +301,7 @@ const DoctorDashboard = () => {
     const tryFetchRecords = async () => {
       try {
         const data = await getPatientRecords(token, accessRequired);
-        setRecords(data.records || []);
+        setRecords(data.data || data.records || []);
         setShowRecords(true);
         setAccessRequired(null);
         resetAccessState();
@@ -477,7 +478,7 @@ const DoctorDashboard = () => {
     if (!healthId) return;
     try {
       const data = await getPatientRecords(token, healthId);
-      setRecords(data.records || []);
+      setRecords(data.data || data.records || []);
       setShowRecords(true);
       setAccessRequired(null);
       setRequestSent(false);

@@ -5,8 +5,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const auth = useAuth() || {};
   const token = auth.token || null;
   const role = auth.role || null;
-  console.log("USER ROLE:", role);
-  console.log("ALLOWED ROLES:", allowedRoles);
 
   if (!token) {
     return <Navigate to="/login" />;

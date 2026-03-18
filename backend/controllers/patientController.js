@@ -8,7 +8,7 @@ const getPatients = async (req, res) => {
   try {
     const { search } = req.query;
     if (!search || !search.trim()) {
-      return res.status(200).json({ patients: [] });
+      return res.status(200).json({ data: [], patients: [] });
     }
 
     const regex = new RegExp(search.trim(), "i");
@@ -19,7 +19,7 @@ const getPatients = async (req, res) => {
 
     const healthIds = users.map((user) => user.healthId).filter(Boolean);
     if (healthIds.length === 0) {
-      return res.status(200).json({ patients: [] });
+      return res.status(200).json({ data: [], patients: [] });
     }
 
     const patientProfiles = await Patient.find({ healthId: { $in: healthIds } }).select(
@@ -36,7 +36,7 @@ const getPatients = async (req, res) => {
       phone: phoneByHealthId[user.healthId] || "N/A"
     }));
 
-    return res.status(200).json({ patients });
+    return res.status(200).json({ data: patients, patients });
   } catch (error) {
     return res.status(500).json({ message: "Failed to fetch patients", error: error.message });
   }

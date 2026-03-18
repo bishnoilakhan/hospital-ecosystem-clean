@@ -34,7 +34,7 @@ const SystemAdminDashboard = () => {
     setLoadingHospitals(true);
     try {
       const data = await getHospitals(token);
-      setHospitals(data.data || []);
+      setHospitals(data.data || data.hospitals || []);
     } catch (error) {
       toast.error("Failed to load hospitals");
     } finally {
@@ -46,7 +46,7 @@ const SystemAdminDashboard = () => {
     if (!token) return;
     try {
       const data = await getUsers(token);
-      const allUsers = data.users || [];
+      const allUsers = data.data || data.users || [];
       setAdmins(allUsers.filter((user) => user.role === "admin"));
     } catch (error) {
       toast.error("Failed to load admins");

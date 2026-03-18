@@ -127,7 +127,12 @@ const loginUser = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, role: user.role, hospitalId: user.hospitalId || null },
+      {
+        id: user._id,
+        role: user.role,
+        hospitalId: user.hospitalId || null,
+        healthId: user.healthId || null
+      },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -176,7 +181,12 @@ const activatePatient = async (req, res) => {
     });
 
     const token = jwt.sign(
-      { id: user._id, role: user.role, hospitalId: user.hospitalId || null },
+      {
+        id: user._id,
+        role: user.role,
+        hospitalId: user.hospitalId || null,
+        healthId: user.healthId || null
+      },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
