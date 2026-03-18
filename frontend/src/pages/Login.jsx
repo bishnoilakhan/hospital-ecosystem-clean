@@ -25,17 +25,18 @@ const Login = () => {
         return;
       }
 
-      const role = (data?.role || "").toLowerCase();
-      login(data?.token, role, data?.hospitalId);
+      const normalizedRole = data?.role?.toLowerCase();
+      console.log("LOGIN ROLE:", normalizedRole);
+      login(data?.token, normalizedRole, data?.hospitalId);
       toast.success("Login successful");
 
-      if (role === "system_admin") navigate("/system-admin");
-      else if (role === "admin") navigate("/admin");
-      else if (role === "doctor") navigate("/doctor");
-      else if (role === "receptionist") navigate("/reception");
-      else if (role === "patient") navigate("/patient");
+      if (normalizedRole === "system_admin") navigate("/system-admin");
+      else if (normalizedRole === "admin") navigate("/admin");
+      else if (normalizedRole === "doctor") navigate("/doctor");
+      else if (normalizedRole === "receptionist") navigate("/reception");
+      else if (normalizedRole === "patient") navigate("/patient");
       else {
-        console.error("Unknown role:", role);
+        console.error("Unknown role:", normalizedRole);
         toast.error("Invalid role");
       }
     } catch (error) {

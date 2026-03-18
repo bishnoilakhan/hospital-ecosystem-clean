@@ -46,9 +46,13 @@ export const AuthProvider = ({ children }) => {
   }
 
   const login = (nextToken, nextRole, nextHospitalId) => {
+    const normalizedRole = nextRole?.toLowerCase() || null;
+    console.log("STORING ROLE:", normalizedRole);
     try {
       localStorage.setItem("token", nextToken);
-      localStorage.setItem("role", nextRole);
+      if (normalizedRole) {
+        localStorage.setItem("role", normalizedRole);
+      }
       if (nextHospitalId) {
         localStorage.setItem("hospitalId", nextHospitalId);
       }
@@ -57,7 +61,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     setToken(nextToken);
-    setRole(nextRole);
+    setRole(normalizedRole);
     setHospitalId(nextHospitalId || null);
   };
 

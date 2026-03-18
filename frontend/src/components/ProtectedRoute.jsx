@@ -5,17 +5,19 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const auth = useAuth() || {};
   const token = auth.token || null;
   const role = auth.role || null;
+  console.log("USER ROLE:", role);
+  console.log("ALLOWED ROLES:", allowedRoles);
 
   if (!token) {
     return <Navigate to="/login" />;
   }
 
   if (!role) {
-    return <div>Loading...</div>;
+    return <Navigate to="/" replace />;
   }
 
   if (allowedRoles && !allowedRoles.includes(role)) {
-    return <Navigate to="/" />;
+    return <Navigate to="/" replace />;
   }
 
   return children || <div>Loading...</div>;
