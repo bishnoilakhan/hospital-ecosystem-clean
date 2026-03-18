@@ -17,14 +17,27 @@ const Login = () => {
     setSubmitting(true);
     try {
       const data = await loginUser({ email, password });
-      login(data?.token, data?.role, data?.hospitalId);
+      console.log("Login response:", data);
+
+      if (!data?.role) {
+        console.error("Role missing in response");
+        toast.error("Login failed: role missing");
+        return;
+      }
+
+      const role = (data?.role || "").toLowerCase();
+      login(data?.token, role, data?.hospitalId);
       toast.success("Login successful");
 
-      if (data?.role === "system_admin") navigate("/system-admin");
-      else if (data?.role === "admin") navigate("/admin");
-      else if (data?.role === "doctor") navigate("/doctor");
-      else if (data?.role === "receptionist") navigate("/reception");
-      else navigate("/patient");
+      if (role === "system_admin") navigate("/system-admin");
+      else if (role === "admin") navigate("/admin");
+      else if (role === "doctor") navigate("/doctor");
+      else if (role === "receptionist") navigate("/reception");
+      else if (role === "patient") navigate("/patient");
+      else {
+        console.error("Unknown role:", role);
+        toast.error("Invalid role");
+      }
     } catch (error) {
       console.error("Login error:", error);
       if (error?.status === 401) {

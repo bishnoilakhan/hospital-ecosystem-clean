@@ -23,6 +23,7 @@ import {
   formatMedicine,
   formatName
 } from "../utils/format";
+import { getSymptomText } from "../utils/symptoms";
 import EmergencyBadge from "../components/EmergencyBadge";
 import { getPriorityColor, getPriorityLabel, isEmergency } from "../utils/priority";
 
@@ -616,7 +617,7 @@ const DoctorDashboard = () => {
                         <div className="mt-2">
                           <p className="text-xs font-medium text-gray-500">Symptoms</p>
                           <p className="text-sm text-gray-700 line-clamp-2">
-                            {currentPatientInQueue.symptoms || "No symptoms provided"}
+                            {getSymptomText(currentPatientInQueue)}
                           </p>
                         </div>
                         {isEmergency(currentPatientInQueue.priorityScore || 0) && (
@@ -734,7 +735,7 @@ const DoctorDashboard = () => {
                                 {formatTime(appointment.date)} • Queue #{appointment.queueNumber || "—"}
                               </p>
                               <p className="mt-1 text-xs text-gray-500">
-                                {appointment.symptoms || "No symptoms provided"}
+                                {getSymptomText(appointment)}
                               </p>
                               <p className="text-xs text-gray-500">
                                 {appointment.department || "General Medicine"}
@@ -983,9 +984,15 @@ const DoctorDashboard = () => {
                   </h2>
                   <div className="rounded-lg bg-gray-50 p-3">
                     <p className="text-sm font-medium text-gray-700">Symptoms</p>
-                    <p className="mt-1 text-sm text-gray-600">
-                      {selectedAppointment?.symptoms || "No symptoms provided"}
-                    </p>
+                    <ul className="mt-2 ml-5 list-disc text-sm text-gray-600">
+                      {selectedAppointment?.structuredSymptoms?.length ? (
+                        selectedAppointment.structuredSymptoms.map((symptom, index) => (
+                          <li key={index}>{symptom}</li>
+                        ))
+                      ) : (
+                        <li>{getSymptomText(selectedAppointment)}</li>
+                      )}
+                    </ul>
                   </div>
                   <div className="mt-2">
                     <p className="text-xs font-medium text-gray-500">Department</p>

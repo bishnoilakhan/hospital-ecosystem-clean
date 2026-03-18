@@ -15,6 +15,7 @@ import toast from "react-hot-toast";
 import StatsCard from "../components/StatsCard";
 import StatsSkeleton from "../components/StatsSkeleton";
 import { formatDepartment, formatDoctorName, formatName } from "../utils/format";
+import { getSymptomText } from "../utils/symptoms";
 import socket from "../socket";
 import EmergencyBadge from "../components/EmergencyBadge";
 import { getPriorityColor, getPriorityLabel, isEmergency } from "../utils/priority";
@@ -615,7 +616,9 @@ const ReceptionDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedTodayAppointments.map((appointment) => (
+                  {sortedTodayAppointments.map((appointment) => {
+                    const symptomText = getSymptomText(appointment);
+                    return (
                     <tr key={appointment._id} className="border-b last:border-b-0">
                       <td className="py-2">{formatTime(appointment.time)}</td>
                       <td
@@ -632,14 +635,14 @@ const ReceptionDashboard = () => {
                         {formatDoctorName(appointment.doctorName || "Unknown")}
                       </td>
                       <td className="py-2 text-sm text-gray-600">
-                        {appointment.symptoms ? (
+                        {symptomText !== "N/A" ? (
                           <div
                             className="cursor-pointer"
-                            title={appointment.symptoms}
+                            title={appointment.rawSymptoms || appointment.symptoms || symptomText}
                           >
-                            {appointment.symptoms.length > 30
-                              ? `${appointment.symptoms.slice(0, 30)}...`
-                              : appointment.symptoms}
+                            {symptomText.length > 30
+                              ? `${symptomText.slice(0, 30)}...`
+                              : symptomText}
                           </div>
                         ) : (
                           "N/A"
@@ -686,7 +689,8 @@ const ReceptionDashboard = () => {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

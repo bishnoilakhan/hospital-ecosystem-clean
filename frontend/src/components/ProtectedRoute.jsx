@@ -7,7 +7,11 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const role = auth.role || null;
 
   if (!token) {
-    return <Navigate to="/" />;
+    return <Navigate to="/login" />;
+  }
+
+  if (!role) {
+    return <div>Loading...</div>;
   }
 
   if (allowedRoles && !allowedRoles.includes(role)) {

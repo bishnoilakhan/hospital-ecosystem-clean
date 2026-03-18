@@ -1,4 +1,5 @@
 import { formatDoctorName, formatLabel, formatMedicine } from "../utils/format";
+import { getSymptomText } from "../utils/symptoms";
 
 const MedicalTimeline = ({ records = [] }) => {
   const sortedRecords = [...records].sort((a, b) => {
@@ -35,9 +36,7 @@ const MedicalTimeline = ({ records = [] }) => {
                 {record.hospitalName || "Unknown"}
               </span>
             </p>
-            <p className="text-sm text-gray-500">
-              Symptoms: {record.symptoms || "N/A"}
-            </p>
+            <p className="text-sm text-gray-500">Symptoms: {getSymptomText(record)}</p>
             <div className="mt-2 text-sm text-slate-600">
               <span className="font-medium text-slate-700">
                 {formatLabel("Prescription")}:

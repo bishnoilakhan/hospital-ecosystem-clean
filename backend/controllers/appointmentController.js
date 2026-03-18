@@ -8,6 +8,8 @@ const Hospital = require("../models/Hospital");
 const AccessControl = require("../models/AccessControl");
 const { getIO } = require("../socket");
 const { analyzeSymptoms } = require("../utils/triage");
+const { extractSymptomsAI } = require("../utils/aiSymptomParser");
+const { extractSymptoms } = require("../utils/symptomParser");
 
 const createAppointment = async (req, res) => {
   try {
@@ -103,7 +105,13 @@ const createAppointment = async (req, res) => {
 
     const queueNumber = lastAppointment ? lastAppointment.queueNumber + 1 : 1;
 
-    const triageData = analyzeSymptoms(symptoms);
+    const rawSymptoms = symptoms.trim();
+    let structuredSymptoms = await extractSymptomsAI(rawSymptoms);
+    if (!structuredSymptoms || !structuredSymptoms.length) {
+      structuredSymptoms = extractSymptoms(rawSymptoms);
+    }
+
+    const triageData = analyzeSymptoms(rawSymptoms);
     const derivedDepartment = triageData.department || "General Medicine";
     const derivedPriorityScore =
       typeof triageData.priorityScore === "number" ? triageData.priorityScore : 5;
@@ -116,7 +124,9 @@ const createAppointment = async (req, res) => {
       hospitalId: resolvedHospitalId,
       queueNumber,
       priorityScore: derivedPriorityScore,
-      symptoms: symptoms.trim(),
+      symptoms: rawSymptoms,
+      rawSymptoms,
+      structuredSymptoms,
       department: derivedDepartment
     });
 
@@ -203,6 +213,8 @@ const getDoctorAppointments = async (req, res) => {
       queueNumber: appointment.queueNumber,
       priorityScore: appointment.priorityScore,
       symptoms: appointment.symptoms || "",
+      rawSymptoms: appointment.rawSymptoms || appointment.symptoms || "",
+      structuredSymptoms: appointment.structuredSymptoms || [],
       doctorName:
         doctorMap[(appointment.doctorId?._id || appointment.doctorId)?.toString()] || "Unknown",
       department: appointment.department || appointment.doctorId?.department || "N/A",
@@ -444,6 +456,8 @@ const getTodayAppointments = async (req, res) => {
         queueNumber: appointment.queueNumber,
         priorityScore: appointment.priorityScore,
         symptoms: appointment.symptoms || "",
+        rawSymptoms: appointment.rawSymptoms || appointment.symptoms || "",
+        structuredSymptoms: appointment.structuredSymptoms || [],
         department: appointment.department || appointment.doctorId?.department || "N/A",
         time: appointment.date,
         status: appointment.status
@@ -506,6 +520,8 @@ const getPatientAppointments = async (req, res) => {
       queueNumber: appointment.queueNumber,
       priorityScore: appointment.priorityScore,
       symptoms: appointment.symptoms || "",
+      rawSymptoms: appointment.rawSymptoms || appointment.symptoms || "",
+      structuredSymptoms: appointment.structuredSymptoms || [],
       date: appointment.date,
       status: appointment.status
     }));

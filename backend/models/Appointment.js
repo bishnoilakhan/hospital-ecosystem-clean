@@ -35,6 +35,15 @@ const appointmentSchema = new mongoose.Schema(
       required: true,
       trim: true
     },
+    rawSymptoms: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    structuredSymptoms: {
+      type: [String],
+      default: []
+    },
     department: {
       type: String,
       trim: true,

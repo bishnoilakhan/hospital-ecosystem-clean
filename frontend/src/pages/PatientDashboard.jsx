@@ -20,6 +20,7 @@ import toast from "react-hot-toast";
 import StatsCard from "../components/StatsCard";
 import StatsSkeleton from "../components/StatsSkeleton";
 import { formatDepartment, formatDoctorName, formatLabel, formatName } from "../utils/format";
+import { getSymptomText } from "../utils/symptoms";
 import EmergencyBadge from "../components/EmergencyBadge";
 import { getPriorityColor, getPriorityLabel, isEmergency } from "../utils/priority";
 
@@ -387,7 +388,7 @@ const PatientDashboard = () => {
                   </p>
                   <p className="text-sm text-gray-600 mt-1">
                     <span className="font-medium">Symptoms:</span>{" "}
-                    {appointment.symptoms || "Not provided"}
+                    {getSymptomText(appointment)}
                   </p>
                   <p className="text-sm text-gray-600 mt-1">
                     <span className="font-medium">Department:</span>{" "}
@@ -453,7 +454,7 @@ const PatientDashboard = () => {
                   </p>
                   <p className="text-sm text-gray-600 mt-1">
                     <span className="font-medium">Symptoms:</span>{" "}
-                    {appointment.symptoms || "Not provided"}
+                    {getSymptomText(appointment)}
                   </p>
                   <p className="text-sm text-gray-600 mt-1">
                     <span className="font-medium">Department:</span>{" "}

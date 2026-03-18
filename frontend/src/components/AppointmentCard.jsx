@@ -1,4 +1,5 @@
 import { formatLabel, formatName } from "../utils/format";
+import { getSymptomText } from "../utils/symptoms";
 
 const AppointmentCard = ({
   appointment,
@@ -33,7 +34,7 @@ const AppointmentCard = ({
       </p>
       <p className="mt-1 text-sm text-gray-600">
         <span className="font-medium">Symptoms:</span>{" "}
-        {appointment.symptoms || "Not provided"}
+        {getSymptomText(appointment)}
       </p>
       <p className="mt-1 text-sm text-gray-600">
         <span className="font-medium">Department:</span>{" "}
