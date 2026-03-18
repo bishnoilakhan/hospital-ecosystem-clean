@@ -51,6 +51,10 @@ const PatientDashboard = () => {
   });
   const [statsLoading, setStatsLoading] = useState(true);
 
+  const filteredDoctors = selectedHospital
+    ? doctors.filter((doctor) => doctor.hospitalId === selectedHospital)
+    : [];
+
   const getStatusStyle = (status) => {
     switch (status) {
       case "scheduled":
@@ -114,6 +118,7 @@ const PatientDashboard = () => {
         date: new Date(appointmentForm.date).toISOString(),
         symptoms: appointmentForm.symptoms
       };
+      console.log("APPOINTMENT PAYLOAD:", payload);
       const data = await createAppointment(payload, token);
       const assignedDepartment =
         data.appointment?.department || data.department || "General Medicine";
@@ -209,9 +214,6 @@ const PatientDashboard = () => {
       const data = await getDoctors(token);
       console.log("DOCTORS:", data);
       setDoctors(data || []);
-      if (!appointmentForm.doctorId && data.data?.length) {
-        setAppointmentForm((prev) => ({ ...prev, doctorId: data.data[0]._id }));
-      }
     } catch (error) {
       toast.error("Failed to load doctors");
     }
@@ -246,6 +248,20 @@ const PatientDashboard = () => {
     fetchAppointments();
     fetchAccessRequests();
   }, [token]);
+
+  useEffect(() => {
+    if (!selectedHospital) return;
+    if (!filteredDoctors.length) {
+      setAppointmentForm((prev) => ({ ...prev, doctorId: "" }));
+      return;
+    }
+    const hasSelected = filteredDoctors.some(
+      (doctor) => doctor._id === appointmentForm.doctorId
+    );
+    if (!hasSelected) {
+      setAppointmentForm((prev) => ({ ...prev, doctorId: filteredDoctors[0]._id }));
+    }
+  }, [filteredDoctors, selectedHospital, appointmentForm.doctorId]);
 
   const handleTriage = async (event) => {
     event.preventDefault();
@@ -521,7 +537,7 @@ const PatientDashboard = () => {
                   ))
                 )}
               </select>
-              {!doctors || doctors.length === 0 ? (
+              {!filteredDoctors || filteredDoctors.length === 0 ? (
                 <p className="text-sm text-gray-500 mt-2">
                   No doctors available in your hospital
                 </p>
@@ -532,12 +548,12 @@ const PatientDashboard = () => {
                 value={appointmentForm.doctorId}
                 onChange={handleAppointmentChange}
                 required
-                disabled={doctors.length === 0}
+                disabled={filteredDoctors.length === 0}
               >
-                {doctors.length === 0 ? (
+                {filteredDoctors.length === 0 ? (
                   <option>No doctors available</option>
                 ) : (
-                  (doctors || []).map((doctor) => (
+                  (filteredDoctors || []).map((doctor) => (
                     <option key={doctor._id} value={doctor._id}>
                       {formatDoctorName(doctor.userId?.name || "Unknown")} -{" "}
                       {doctor.department ? formatDepartment(doctor.department) : "N/A"}
