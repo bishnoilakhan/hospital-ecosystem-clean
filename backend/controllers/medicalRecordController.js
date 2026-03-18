@@ -44,18 +44,34 @@ const addMedicalRecord = async (req, res) => {
       return res.status(400).json({ message: "Doctor hospital not set" });
     }
 
-    const access = await AccessControl.findOne({
-      patientHealthId,
-      hospitalId: req.user.hospitalId,
-      granted: true,
-      expiresAt: { $gt: new Date() }
-    });
-
-    if (!access) {
-      return res.status(403).json({ message: "Access required to add medical records" });
+    const patient = await Patient.findOne({ healthId: patientHealthId }).select("healthId");
+    if (!patient || !patient.healthId) {
+      return res.status(400).json({ message: "Invalid patient" });
     }
 
-    const patient = await Patient.findOne({ healthId: patientHealthId }).select("healthId");
+    const healthId = patientHealthId;
+
+    if (req.user.role === "doctor") {
+      const patient = await Patient.findOne({ healthId });
+
+      if (!patient) {
+        return res.status(400).json({ message: "Invalid patient" });
+      }
+
+      const access = await AccessControl.findOne({
+        patientHealthId: patient.healthId,
+        hospitalId: req.user.hospitalId,
+        granted: true,
+        expiresAt: { $gt: new Date() }
+      });
+
+      if (!access) {
+        return res.status(403).json({
+          message: "Access required to view medical records"
+        });
+      }
+    }
+
     if (!patient) {
       return res.status(404).json({ message: "Patient not found" });
     }
@@ -110,15 +126,24 @@ const getPatientRecords = async (req, res) => {
         return res.status(404).json({ message: "Doctor profile not found" });
       }
 
+      const healthId = patientHealthId;
+      const patient = await Patient.findOne({ healthId });
+
+      if (!patient) {
+        return res.status(400).json({ message: "Invalid patient" });
+      }
+
       const access = await AccessControl.findOne({
-        patientHealthId,
+        patientHealthId: patient.healthId,
         hospitalId: req.user.hospitalId,
         granted: true,
         expiresAt: { $gt: new Date() }
       });
 
       if (!access) {
-        return res.status(403).json({ message: "Access required to view medical records" });
+        return res.status(403).json({
+          message: "Access required to view medical records"
+        });
       }
     }
 

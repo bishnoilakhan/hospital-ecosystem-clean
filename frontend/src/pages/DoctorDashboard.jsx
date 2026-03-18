@@ -283,12 +283,13 @@ const DoctorDashboard = () => {
     };
 
     const handleAccessApproved = (data) => {
-      const currentHealthId =
+      const targetHealthId =
+        data?.patientHealthId ||
         accessRequired ||
         selectedAppointment?.patient?.healthId ||
         currentPatient?.patient?.healthId;
-      if (data?.patientHealthId && data.patientHealthId === currentHealthId) {
-        handleViewRecord(data.patientHealthId);
+      if (targetHealthId) {
+        handleViewRecord(targetHealthId);
       }
     };
 

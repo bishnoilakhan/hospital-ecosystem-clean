@@ -264,7 +264,7 @@ const PatientDashboard = () => {
 
   useEffect(() => {
     const handleAppointmentCreated = (data) => {
-      if (!profile?.healthId || !data?.patientId) {
+      if (!data?.patientId || !profile?.healthId) {
         fetchAppointments();
         return;
       }
