@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext(null);
 
@@ -18,32 +18,6 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(initialToken);
   const [role, setRole] = useState(initialRole);
   const [hospitalId, setHospitalId] = useState(initialHospitalId);
-
-  try {
-    const decoded = token ? JSON.parse(atob(token.split(".")[1])) : null;
-
-    if (decoded && !decoded.hospitalId) {
-      console.warn("Old token detected — clearing session");
-
-      localStorage.removeItem("token");
-      localStorage.removeItem("role");
-      localStorage.removeItem("hospitalId");
-
-      setToken(null);
-      setRole(null);
-      setHospitalId(null);
-    }
-  } catch (error) {
-    console.warn("Invalid token — clearing session");
-
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("hospitalId");
-
-    setToken(null);
-    setRole(null);
-    setHospitalId(null);
-  }
 
   const login = (nextToken, nextRole, nextHospitalId) => {
     const normalizedRole = nextRole?.toLowerCase() || null;
@@ -76,6 +50,26 @@ export const AuthProvider = ({ children }) => {
     setRole(null);
     setHospitalId(null);
   };
+
+  useEffect(() => {
+    if (!token) return;
+
+    const timeoutId = setTimeout(() => {
+      try {
+        const decoded = JSON.parse(atob(token.split(".")[1]));
+
+        if (!decoded || !decoded.role) {
+          console.warn("Invalid token — clearing session");
+          logout();
+        }
+      } catch (error) {
+        console.warn("Token decode failed — clearing session");
+        logout();
+      }
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [token]);
 
   return (
     <AuthContext.Provider value={{ token, role, hospitalId, login, logout }}>
