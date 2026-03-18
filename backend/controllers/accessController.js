@@ -106,7 +106,7 @@ const approveAccess = async (req, res) => {
     await AccessControl.findByIdAndUpdate(id, {
       granted: true,
       grantedBy: "patient",
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      grantedAt: new Date()
     });
 
     const io = getIO();

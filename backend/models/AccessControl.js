@@ -27,6 +27,10 @@ const accessControlSchema = new mongoose.Schema(
       enum: ["system", "patient", null],
       default: null
     },
+    grantedAt: {
+      type: Date,
+      default: Date.now
+    },
     expiresAt: {
       type: Date,
       default: null

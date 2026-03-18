@@ -62,13 +62,22 @@ const addMedicalRecord = async (req, res) => {
         patientHealthId: patient.healthId,
         hospitalId: req.user.hospitalId,
         doctorId: req.user.id,
-        granted: true,
-        expiresAt: { $gt: new Date() }
+        granted: true
       });
 
       if (!access) {
         return res.status(403).json({
-          message: "Access required to view medical records"
+          message: "Access required"
+        });
+      }
+
+      const latestRecord = await MedicalRecord.findOne({
+        patientHealthId: patient.healthId
+      }).sort({ createdAt: -1 });
+
+      if (latestRecord && latestRecord.createdAt > access.grantedAt) {
+        return res.status(403).json({
+          message: "Access expired due to new medical record update"
         });
       }
     }
@@ -138,13 +147,22 @@ const getPatientRecords = async (req, res) => {
         patientHealthId: patient.healthId,
         hospitalId: req.user.hospitalId,
         doctorId: req.user.id,
-        granted: true,
-        expiresAt: { $gt: new Date() }
+        granted: true
       });
 
       if (!access) {
         return res.status(403).json({
-          message: "Access required to view medical records"
+          message: "Access required"
+        });
+      }
+
+      const latestRecord = await MedicalRecord.findOne({
+        patientHealthId: patient.healthId
+      }).sort({ createdAt: -1 });
+
+      if (latestRecord && latestRecord.createdAt > access.grantedAt) {
+        return res.status(403).json({
+          message: "Access expired due to new medical record update"
         });
       }
     }
