@@ -38,6 +38,13 @@ const requestAccess = async (req, res) => {
       grantedBy: null
     });
 
+    const io = getIO();
+    io.emit("accessRequested", {
+      patientHealthId,
+      hospitalId: doctor.hospitalId,
+      doctorId: doctor._id
+    });
+
     return res.status(201).json({ message: "Access request sent" });
   } catch (error) {
     return res.status(500).json({ message: "Failed to request access", error: error.message });
@@ -103,6 +110,11 @@ const approveAccess = async (req, res) => {
     io.emit("accessGranted", {
       patientHealthId: access.patientHealthId,
       hospitalId: access.hospitalId
+    });
+    io.emit("accessApproved", {
+      patientHealthId: access.patientHealthId,
+      hospitalId: access.hospitalId,
+      doctorId: access.doctorId || null
     });
 
     return res.status(200).json({ message: "Access granted" });

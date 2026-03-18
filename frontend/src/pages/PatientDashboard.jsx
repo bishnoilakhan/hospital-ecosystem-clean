@@ -23,6 +23,7 @@ import { formatDepartment, formatDoctorName, formatLabel, formatName } from "../
 import { getSymptomText } from "../utils/symptoms";
 import EmergencyBadge from "../components/EmergencyBadge";
 import { getPriorityColor, getPriorityLabel, isEmergency } from "../utils/priority";
+import socket from "../socket";
 
 const PatientDashboard = () => {
   const { token } = useAuth();
@@ -260,6 +261,30 @@ const PatientDashboard = () => {
     fetchAppointments();
     fetchAccessRequests();
   }, [token]);
+
+  useEffect(() => {
+    const handleAppointmentCreated = (data) => {
+      if (!profile?.healthId || !data?.patientId) {
+        fetchAppointments();
+        return;
+      }
+      if (String(data.patientId) === String(profile.healthId)) {
+        fetchAppointments();
+      }
+    };
+
+    const handleAccessApproved = () => {
+      fetchMedicalRecords();
+    };
+
+    socket.on("appointmentCreated", handleAppointmentCreated);
+    socket.on("accessApproved", handleAccessApproved);
+
+    return () => {
+      socket.off("appointmentCreated", handleAppointmentCreated);
+      socket.off("accessApproved", handleAccessApproved);
+    };
+  }, [profile?.healthId]);
 
   useEffect(() => {
     if (!selectedHospital) return;

@@ -149,7 +149,8 @@ const createAppointment = async (req, res) => {
     io.emit("appointmentCreated", {
       appointmentId: appointment._id,
       doctorId: appointment.doctorId,
-      hospitalId: appointment.hospitalId
+      hospitalId: appointment.hospitalId,
+      patientId: resolvedPatientHealthId
     });
 
     return res.status(201).json({
@@ -307,6 +308,13 @@ const completeAppointment = async (req, res) => {
 
     appointment.status = "completed";
     await appointment.save();
+
+    const io = getIO();
+    io.emit("appointmentCompleted", {
+      appointmentId: appointment._id,
+      doctorId: appointment.doctorId,
+      hospitalId: appointment.hospitalId
+    });
 
     return res.status(200).json({
       message: "Appointment completed",

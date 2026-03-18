@@ -262,19 +262,27 @@ const DoctorDashboard = () => {
   useEffect(() => {
     const handleAppointmentCheckedIn = (data) => {
       const doctorId = doctorIdRef.current;
-      if (data?.doctorId && doctorId && String(data.doctorId) === String(doctorId)) {
+      if (!doctorId || !data?.doctorId) {
+        fetchAppointments();
+        return;
+      }
+      if (String(data.doctorId) === String(doctorId)) {
         fetchAppointments();
       }
     };
 
     const handleAppointmentCreated = (data) => {
       const doctorId = doctorIdRef.current;
-      if (data?.doctorId && doctorId && String(data.doctorId) === String(doctorId)) {
+      if (!doctorId || !data?.doctorId) {
+        fetchAppointments();
+        return;
+      }
+      if (String(data.doctorId) === String(doctorId)) {
         fetchAppointments();
       }
     };
 
-    const handleAccessGranted = (data) => {
+    const handleAccessApproved = (data) => {
       const currentHealthId =
         accessRequired ||
         selectedAppointment?.patient?.healthId ||
@@ -286,12 +294,25 @@ const DoctorDashboard = () => {
 
     socket.on("appointmentCheckedIn", handleAppointmentCheckedIn);
     socket.on("appointmentCreated", handleAppointmentCreated);
-    socket.on("accessGranted", handleAccessGranted);
+    socket.on("accessApproved", handleAccessApproved);
+    const handleAppointmentCompleted = (data) => {
+      const doctorId = doctorIdRef.current;
+      if (!doctorId || !data?.doctorId) {
+        fetchAppointments();
+        return;
+      }
+      if (String(data.doctorId) === String(doctorId)) {
+        fetchAppointments();
+      }
+    };
+
+    socket.on("appointmentCompleted", handleAppointmentCompleted);
 
     return () => {
       socket.off("appointmentCheckedIn", handleAppointmentCheckedIn);
       socket.off("appointmentCreated", handleAppointmentCreated);
-      socket.off("accessGranted", handleAccessGranted);
+      socket.off("accessApproved", handleAccessApproved);
+      socket.off("appointmentCompleted", handleAppointmentCompleted);
     };
   }, [accessRequired, selectedAppointment, currentPatient]);
 

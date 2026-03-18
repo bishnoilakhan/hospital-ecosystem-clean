@@ -243,14 +243,24 @@ const ReceptionDashboard = () => {
 
   useEffect(() => {
     const handleAppointmentCreated = (data) => {
-      if (data?.hospitalId && hospitalId && data.hospitalId === hospitalId) {
+      if (!hospitalId || !data?.hospitalId) {
+        fetchTodayAppointments();
+        fetchStats();
+        return;
+      }
+      if (data.hospitalId === hospitalId) {
         fetchTodayAppointments();
         fetchStats();
       }
     };
 
     const handleAppointmentCheckedIn = (data) => {
-      if (data?.hospitalId && hospitalId && data.hospitalId === hospitalId) {
+      if (!hospitalId || !data?.hospitalId) {
+        fetchTodayAppointments();
+        fetchStats();
+        return;
+      }
+      if (data.hospitalId === hospitalId) {
         fetchTodayAppointments();
         fetchStats();
       }
@@ -263,7 +273,7 @@ const ReceptionDashboard = () => {
       socket.off("appointmentCreated", handleAppointmentCreated);
       socket.off("appointmentCheckedIn", handleAppointmentCheckedIn);
     };
-  }, [token]);
+  }, [hospitalId]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
