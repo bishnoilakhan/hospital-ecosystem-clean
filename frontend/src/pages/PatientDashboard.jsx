@@ -24,6 +24,7 @@ import { getSymptomText } from "../utils/symptoms";
 import EmergencyBadge from "../components/EmergencyBadge";
 import { getPriorityColor, getPriorityLabel, isEmergency } from "../utils/priority";
 import socket from "../socket";
+import { PrimaryButton, SecondaryButton, Input, Card, Badge } from "../components/ui";
 
 const PatientDashboard = () => {
   const { token } = useAuth();
@@ -45,6 +46,7 @@ const PatientDashboard = () => {
   const [booking, setBooking] = useState(false);
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [triaging, setTriaging] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     appointments: "—",
     records: "—",
@@ -69,6 +71,18 @@ const PatientDashboard = () => {
     }
   };
 
+  const getBadgeColor = (status) => {
+    switch (status) {
+      case "scheduled":
+        return "gray";
+      case "checked-in":
+        return "blue";
+      case "completed":
+        return "green";
+      default:
+        return "gray";
+    }
+  };
   const upcomingAppointments = appointments.filter(
     (appointment) => new Date(appointment.date) >= new Date()
   );
@@ -254,12 +268,27 @@ const PatientDashboard = () => {
   };
 
   useEffect(() => {
-    fetchProfile();
-    fetchStats();
-    fetchHospitals();
-    fetchMedicalRecords();
-    fetchAppointments();
-    fetchAccessRequests();
+    let isMounted = true;
+    const loadDashboard = async () => {
+      if (!token) {
+        if (isMounted) setLoading(false);
+        return;
+      }
+      setLoading(true);
+      await Promise.all([
+        fetchProfile(),
+        fetchStats(),
+        fetchHospitals(),
+        fetchMedicalRecords(),
+        fetchAppointments(),
+        fetchAccessRequests()
+      ]);
+      if (isMounted) setLoading(false);
+    };
+    loadDashboard();
+    return () => {
+      isMounted = false;
+    };
   }, [token]);
 
   useEffect(() => {
@@ -319,9 +348,34 @@ const PatientDashboard = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <DashboardLayout title="Patient Dashboard">
+        <div className="min-h-screen bg-gray-50">
+          <div className="mx-auto max-w-7xl px-4 py-6">
+            <div className="mb-6 flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+            </div>
+            <div className="space-y-3">
+              <div className="h-6 w-1/3 animate-pulse rounded bg-gray-200" />
+              <div className="h-24 animate-pulse rounded bg-gray-200" />
+              <div className="h-24 animate-pulse rounded bg-gray-200" />
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout title="Patient Dashboard">
-      <div className="container mx-auto grid gap-6">
+      <div className="min-h-screen bg-gray-50">
+        <div className="mx-auto max-w-7xl px-4 py-6">
+          <div className="mb-6 flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+          </div>
+          <div className="grid gap-6 transition-all duration-200">
+            <div className="container mx-auto grid gap-6 transition-all duration-200">
         {!token && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
             Please log in to book appointments or view records.
@@ -329,7 +383,7 @@ const PatientDashboard = () => {
         )}
 
         {profile && (
-          <div className="rounded-lg bg-white p-4 shadow">
+          <Card className="shadow">
             <h2 className="mb-2 text-lg font-semibold text-slate-900">
               {formatLabel("Patient Profile")}
             </h2>
@@ -359,7 +413,7 @@ const PatientDashboard = () => {
                 {profile.bloodGroup}
               </p>
             </div>
-          </div>
+          </Card>
         )}
 
         <div className="rounded-lg bg-white p-4 shadow">
@@ -369,7 +423,7 @@ const PatientDashboard = () => {
           {loadingRequests ? (
             <p className="text-sm text-slate-500">Loading access requests...</p>
           ) : accessRequests.length === 0 ? (
-            <p className="text-sm text-slate-500">No pending access requests</p>
+            <p className="text-sm text-gray-400">No pending access requests</p>
           ) : (
             <div className="grid gap-3">
               {accessRequests.map((request) => (
@@ -388,20 +442,20 @@ const PatientDashboard = () => {
                       : "Date not set"}
                   </p>
                   <div className="mt-3 flex gap-2">
-                    <button
+                    <PrimaryButton
                       type="button"
-                      className="rounded bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700"
+                      className="text-xs"
                       onClick={() => handleApproveRequest(request._id)}
                     >
                       Approve
-                    </button>
-                    <button
+                    </PrimaryButton>
+                    <SecondaryButton
                       type="button"
-                      className="rounded border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:border-slate-300"
+                      className="text-xs"
                       onClick={() => handleRejectRequest(request._id)}
                     >
                       Reject
-                    </button>
+                    </SecondaryButton>
                   </div>
                 </div>
               ))}
@@ -414,7 +468,7 @@ const PatientDashboard = () => {
             {formatLabel("Upcoming Appointments")}
           </h2>
           {upcomingAppointments.length === 0 ? (
-            <p className="text-sm text-slate-500">No appointments yet.</p>
+            <p className="text-sm text-gray-400">No appointments yet</p>
           ) : (
             <div className="grid gap-3">
               {upcomingAppointments.map((appointment, index) => (
@@ -454,13 +508,9 @@ const PatientDashboard = () => {
                     <span className="font-medium">Department:</span>{" "}
                     {appointment.department || "GENERAL"}
                   </p>
-                  <span
-                    className={`inline-block rounded px-2 py-1 text-xs font-semibold ${getStatusStyle(
-                      appointment.status
-                    )}`}
-                  >
+                  <Badge color={getBadgeColor(appointment.status)}>
                     {appointment.status}
-                  </span>
+                  </Badge>
                   <span
                     className={`ml-2 inline-block rounded px-2 py-1 text-xs text-white ${getPriorityColor(
                       appointment.priorityScore || 0
@@ -480,7 +530,7 @@ const PatientDashboard = () => {
             {formatLabel("Past Appointments")}
           </h2>
           {pastAppointments.length === 0 ? (
-            <p className="text-sm text-slate-500">No past appointments yet.</p>
+            <p className="text-sm text-gray-400">No past appointments yet</p>
           ) : (
             <div className="grid gap-3">
               {pastAppointments.map((appointment, index) => (
@@ -520,13 +570,9 @@ const PatientDashboard = () => {
                     <span className="font-medium">Department:</span>{" "}
                     {appointment.department || "GENERAL"}
                   </p>
-                  <span
-                    className={`inline-block rounded px-2 py-1 text-xs font-semibold ${getStatusStyle(
-                      appointment.status
-                    )}`}
-                  >
+                  <Badge color={getBadgeColor(appointment.status)}>
                     {appointment.status}
-                  </span>
+                  </Badge>
                   <span
                     className={`ml-2 inline-block rounded px-2 py-1 text-xs text-white ${getPriorityColor(
                       appointment.priorityScore || 0
@@ -581,7 +627,7 @@ const PatientDashboard = () => {
                 )}
               </select>
               {!filteredDoctors || filteredDoctors.length === 0 ? (
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-sm text-gray-400 mt-2">
                   No doctors available in your hospital
                 </p>
               ) : null}
@@ -604,8 +650,8 @@ const PatientDashboard = () => {
                   ))
                 )}
               </select>
-              <input
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              <Input
+                className="text-sm"
                 type="datetime-local"
                 name="date"
                 value={appointmentForm.date}
@@ -620,16 +666,9 @@ const PatientDashboard = () => {
                 required
                 placeholder="Enter patient symptoms..."
               />
-              <button
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                disabled={booking}
-              >
-                {booking ? (
-                  <div className="mx-auto h-4 w-4 animate-spin rounded-full border-b-2 border-white" />
-                ) : (
-                  "Book Appointment"
-                )}
-              </button>
+              <PrimaryButton className="text-sm" disabled={booking}>
+                {booking ? "Processing..." : "Book Appointment"}
+              </PrimaryButton>
             </form>
           </DashboardCard>
 
@@ -638,16 +677,13 @@ const PatientDashboard = () => {
             description="See your latest consultations and prescriptions."
           >
             <form onSubmit={handleFetchRecords} className="grid gap-3">
-              <button
-                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
-                disabled={loadingRecords}
-              >
+              <SecondaryButton className="text-sm" disabled={loadingRecords}>
                 {loadingRecords ? (
                   <div className="mx-auto h-4 w-4 animate-spin rounded-full border-b-2 border-slate-700" />
                 ) : (
                   "View Records"
                 )}
-              </button>
+              </SecondaryButton>
             </form>
             <div className="mt-4">
               <MedicalTimeline records={records} />
@@ -666,16 +702,9 @@ const PatientDashboard = () => {
                 onChange={(event) => setTriageInput(event.target.value)}
                 required
               />
-              <button
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                disabled={triaging}
-              >
-                {triaging ? (
-                  <div className="mx-auto h-4 w-4 animate-spin rounded-full border-b-2 border-white" />
-                ) : (
-                  "Analyze Symptoms"
-                )}
-              </button>
+              <PrimaryButton className="text-sm" disabled={triaging}>
+                {triaging ? "Processing..." : "Analyze Symptoms"}
+              </PrimaryButton>
             </form>
             {triageResult && (
               <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm">
@@ -694,7 +723,10 @@ const PatientDashboard = () => {
               </div>
             )}
           </DashboardCard>
+        </div>
+            </div>
           </div>
+        </div>
       </div>
     </DashboardLayout>
   );

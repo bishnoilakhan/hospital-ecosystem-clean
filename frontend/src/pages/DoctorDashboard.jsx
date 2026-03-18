@@ -26,6 +26,7 @@ import {
 import { getSymptomText } from "../utils/symptoms";
 import EmergencyBadge from "../components/EmergencyBadge";
 import { getPriorityColor, getPriorityLabel, isEmergency } from "../utils/priority";
+import { PrimaryButton, SecondaryButton, Input, Card, Badge } from "../components/ui";
 
 const API_BASE_URL = "https://hospital-ecosystem-clean-backend.onrender.com/api";
 
@@ -65,6 +66,7 @@ const DoctorDashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [submittingRecord, setSubmittingRecord] = useState(false);
   const [completingId, setCompletingId] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     todaysAppointments: "—",
     completedToday: "—",
@@ -135,6 +137,19 @@ const DoctorDashboard = () => {
     }
   };
 
+  const getBadgeColor = (status) => {
+    switch (status) {
+      case "scheduled":
+        return "gray";
+      case "checked-in":
+        return "blue";
+      case "completed":
+        return "green";
+      default:
+        return "gray";
+    }
+  };
+
   const formatTime = (date) =>
     date
       ? new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
@@ -193,10 +208,20 @@ const DoctorDashboard = () => {
   };
 
   useEffect(() => {
-    if (token) {
-      fetchAppointments();
-      fetchStats();
-    }
+    let isMounted = true;
+    const loadDashboard = async () => {
+      if (!token) {
+        if (isMounted) setLoading(false);
+        return;
+      }
+      setLoading(true);
+      await fetchAppointments();
+      if (isMounted) setLoading(false);
+    };
+    loadDashboard();
+    return () => {
+      isMounted = false;
+    };
   }, [token]);
 
   useEffect(() => {
@@ -551,9 +576,34 @@ const DoctorDashboard = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <DashboardLayout title="Doctor Dashboard">
+        <div className="min-h-screen bg-gray-50">
+          <div className="mx-auto max-w-7xl px-4 py-6">
+            <div className="mb-6 flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+            </div>
+            <div className="space-y-3">
+              <div className="h-6 w-1/3 animate-pulse rounded bg-gray-200" />
+              <div className="h-24 animate-pulse rounded bg-gray-200" />
+              <div className="h-24 animate-pulse rounded bg-gray-200" />
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout title="Doctor Dashboard">
-      <div className="container mx-auto space-y-6">
+      <div className="min-h-screen bg-gray-50">
+        <div className="mx-auto max-w-7xl px-4 py-6">
+          <div className="mb-6 flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+          </div>
+          <div className="grid gap-6 transition-all duration-200">
+            <div className="container mx-auto space-y-6 transition-all duration-200">
         {!token && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
             Please log in as a doctor to view appointments and add records.
@@ -619,7 +669,7 @@ const DoctorDashboard = () => {
             <div className="mt-4">
               {activeTab === "today" && (
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                  <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                  <Card className="border border-gray-200 p-6">
                     <h2 className="mb-3 text-lg font-semibold text-slate-900">
                       {formatLabel("Current Patient")}
                     </h2>
@@ -661,12 +711,12 @@ const DoctorDashboard = () => {
                         >
                           {getPriorityLabel(currentPatientInQueue.priorityScore || 0)}
                         </span>
-                        <button
+                        <PrimaryButton
                           onClick={() => handleOpenConsultation(currentPatientInQueue)}
-                          className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                          className="mt-4 text-sm"
                         >
                           Open Consultation
-                        </button>
+                        </PrimaryButton>
                       </>
                     ) : (
                       <p className="text-sm text-gray-500">
@@ -692,31 +742,27 @@ const DoctorDashboard = () => {
                       </div>
                     )}
                     {!nextPatientInQueue && (
-                      <p className="mt-3 text-sm text-gray-500">No patients waiting</p>
+                      <p className="mt-3 text-sm text-gray-400">No patients waiting</p>
                     )}
-                  </div>
+                  </Card>
 
-                  <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                  <Card className="border border-gray-200 p-6">
                     <div className="mb-4 flex items-center justify-between">
                       <h2 className="text-lg font-semibold text-slate-900">
                         {formatLabel("Today's Queue")}
                       </h2>
                       <div className="flex items-center gap-2">
-                        <button
+                        <PrimaryButton
                           type="button"
-                          className={`rounded-lg px-3 py-2 text-xs font-semibold text-white ${
-                            disableCallNext
-                              ? "bg-gray-400 cursor-not-allowed"
-                              : "bg-blue-600 hover:bg-blue-700"
-                          }`}
+                          className={`text-xs ${disableCallNext ? "cursor-not-allowed bg-gray-400 hover:bg-gray-400" : ""}`}
                           onClick={handleCallNext}
                           disabled={disableCallNext}
                         >
                           Call Next Patient
-                        </button>
-                        <button
+                        </PrimaryButton>
+                        <SecondaryButton
                           type="button"
-                          className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-slate-300"
+                          className="text-xs"
                           onClick={() => {
                             if (!refreshing) fetchAppointments();
                           }}
@@ -727,7 +773,7 @@ const DoctorDashboard = () => {
                           ) : (
                             "Refresh"
                           )}
-                        </button>
+                        </SecondaryButton>
                       </div>
                     </div>
                     {hasCurrentPatient && (
@@ -736,10 +782,10 @@ const DoctorDashboard = () => {
                       </p>
                     )}
                     {!hasWaitingPatients && (
-                      <p className="mt-2 text-sm text-gray-500">No patients in queue</p>
+                      <p className="mt-2 text-sm text-gray-400">No patients in queue</p>
                     )}
                     {todaysAppointmentsSorted.length === 0 ? (
-                      <p className="text-sm text-gray-500">No appointments today</p>
+                      <p className="text-sm text-gray-400">No appointments today</p>
                     ) : (
                       <AnimatePresence>
                         {todaysAppointmentsSorted.map((appointment) => (
@@ -779,29 +825,25 @@ const DoctorDashboard = () => {
                               {getPriorityLabel(appointment.priorityScore || 0)}
                             </span>
                             <EmergencyBadge priorityScore={appointment.priorityScore || 0} />
-                            <span
-                              className={`rounded px-2 py-1 text-xs font-semibold ${getStatusStyle(
-                                appointment.status
-                              )}`}
-                              >
-                                {appointment.status}
-                              </span>
+                            <Badge color={getBadgeColor(appointment.status)}>
+                              {appointment.status}
+                            </Badge>
                             </div>
                           </motion.div>
                         ))}
                       </AnimatePresence>
                     )}
-                  </div>
+                  </Card>
                 </div>
               )}
 
               {activeTab === "upcoming" && (
-                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                <Card className="p-6">
                   <h2 className="mb-4 text-lg font-semibold text-slate-900">
                     {formatLabel("Upcoming Appointments")}
                   </h2>
                   {upcomingAppointments.length === 0 ? (
-                    <p className="text-sm text-gray-500">No upcoming appointments</p>
+                    <p className="text-sm text-gray-400">No upcoming appointments</p>
                   ) : (
                     <div className="grid gap-3">
                       {upcomingAppointments.map((appointment) => (
@@ -826,16 +868,16 @@ const DoctorDashboard = () => {
                       ))}
                     </div>
                   )}
-                </div>
+                </Card>
               )}
 
               {activeTab === "past" && (
-                <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                <Card className="p-6">
                   <h2 className="mb-4 text-lg font-semibold text-slate-900">
                     {formatLabel("Past Appointments")}
                   </h2>
                   {sortedPastAppointments.length === 0 ? (
-                    <p className="text-sm text-gray-500">No past appointments</p>
+                    <p className="text-sm text-gray-400">No past appointments</p>
                   ) : (
                     <div className="max-h-96 overflow-y-auto">
                       {sortedPastAppointments.map((appointment) => (
@@ -866,26 +908,26 @@ const DoctorDashboard = () => {
                       ))}
                     </div>
                   )}
-                </div>
+                </Card>
               )}
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <Card className="p-6">
               <h2 className="mb-4 text-lg font-semibold text-slate-900">
                 {formatLabel("Search Patient Records")}
               </h2>
-              <input
+              <Input
                 type="text"
                 placeholder="Search patient by name or Health ID"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                className="mb-4 w-full rounded border border-slate-200 p-2 text-sm"
+                className="mb-4 text-sm"
               />
               {searchResults.length === 0 ? (
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-gray-400">
                   {search.trim().length < 2
                     ? "Type at least 2 characters to search."
-                    : "No patients found."}
+                    : "No patients found"}
                 </p>
               ) : (
                 <div className="divide-y divide-slate-100 rounded-lg border border-slate-100">
@@ -905,10 +947,10 @@ const DoctorDashboard = () => {
                   ))}
                 </div>
               )}
-            </div>
+            </Card>
 
             {showRecords && (
-              <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <Card className="p-6">
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-slate-900">Medical Records</h2>
                   <button
@@ -920,7 +962,7 @@ const DoctorDashboard = () => {
                   </button>
                 </div>
                 {records.length === 0 ? (
-                  <p className="text-sm text-slate-500">No records found.</p>
+                  <p className="text-sm text-gray-400">No records found</p>
                 ) : (
                   <div className="grid gap-3">
                     {records.map((record) => (
@@ -1034,8 +1076,8 @@ const DoctorDashboard = () => {
                       <p className="text-xs font-semibold text-slate-600">
                         {formatLabel("Diagnosis")}
                       </p>
-                      <input
-                        className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      <Input
+                        className="mt-2 text-sm"
                         placeholder="Diagnosis"
                         value={diagnosis}
                         onChange={(event) => setDiagnosis(event.target.value)}
@@ -1078,43 +1120,43 @@ const DoctorDashboard = () => {
                         {formatLabel("Prescription")}
                       </p>
                       <div className="mt-3 grid gap-2">
-                        <input
-                          className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        <Input
+                          className="text-sm"
                           placeholder="Medicine"
                           name="medicine"
                           value={medicineForm.medicine}
                           onChange={handleMedicineChange}
                         />
                         <div className="grid gap-2 md:grid-cols-2">
-                          <input
-                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                          <Input
+                            className="text-sm"
                             placeholder="Dose"
                             name="dose"
                             value={medicineForm.dose}
                             onChange={handleMedicineChange}
                           />
-                          <input
-                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                          <Input
+                            className="text-sm"
                             placeholder="Frequency"
                             name="frequency"
                             value={medicineForm.frequency}
                             onChange={handleMedicineChange}
                           />
                         </div>
-                        <input
-                          className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        <Input
+                          className="text-sm"
                           placeholder="Duration"
                           name="duration"
                           value={medicineForm.duration}
                           onChange={handleMedicineChange}
                         />
-                        <button
+                        <SecondaryButton
                           type="button"
-                          className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-slate-300"
+                          className="text-xs"
                           onClick={handleAddMedicine}
                         >
                           Add Medicine
-                        </button>
+                        </SecondaryButton>
                       </div>
                       {medicines.length > 0 && (
                         <div className="mt-3">
@@ -1156,36 +1198,32 @@ const DoctorDashboard = () => {
                       />
                     </div>
 
-                    <button
-                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                      disabled={submittingRecord}
-                    >
-                      {submittingRecord ? (
-                        <div className="mx-auto h-4 w-4 animate-spin rounded-full border-b-2 border-white" />
-                      ) : (
-                        "Save Medical Record"
-                      )}
-                    </button>
-                    <button
+                    <PrimaryButton className="text-sm" disabled={submittingRecord}>
+                      {submittingRecord ? "Processing..." : "Save Medical Record"}
+                    </PrimaryButton>
+                    <PrimaryButton
                       type="button"
                       onClick={handleCompleteConsultation}
-                      className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+                      className="bg-green-600 hover:bg-green-700 text-sm"
                     >
                       Complete Consultation
-                    </button>
-                    <button
+                    </PrimaryButton>
+                    <SecondaryButton
                       type="button"
                       onClick={handleExitConsultation}
-                      className="rounded-lg bg-gray-500 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-600"
+                      className="text-sm"
                     >
                       Exit Consultation
-                    </button>
+                    </SecondaryButton>
                   </form>
                 </div>
               </>
             )}
           </div>
         )}
+            </div>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );

@@ -9,6 +9,7 @@ import {
   getUsers
 } from "../services/api";
 import { formatName } from "../utils/format";
+import { PrimaryButton, SecondaryButton, Input, Card, Badge } from "../components/ui";
 
 const SystemAdminDashboard = () => {
   const { token } = useAuth();
@@ -28,6 +29,7 @@ const SystemAdminDashboard = () => {
   const [loadingHospitals, setLoadingHospitals] = useState(false);
   const [creatingHospital, setCreatingHospital] = useState(false);
   const [creatingAdmin, setCreatingAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchHospitals = async () => {
     if (!token) return;
@@ -54,8 +56,20 @@ const SystemAdminDashboard = () => {
   };
 
   useEffect(() => {
-    fetchHospitals();
-    fetchAdmins();
+    let isMounted = true;
+    const loadDashboard = async () => {
+      if (!token) {
+        if (isMounted) setLoading(false);
+        return;
+      }
+      setLoading(true);
+      await Promise.all([fetchHospitals(), fetchAdmins()]);
+      if (isMounted) setLoading(false);
+    };
+    loadDashboard();
+    return () => {
+      isMounted = false;
+    };
   }, [token]);
 
   const handleHospitalChange = (event) => {
@@ -99,49 +113,71 @@ const SystemAdminDashboard = () => {
   const hospitalNameById = (id) =>
     hospitals.find((hospital) => hospital._id === id)?.name || "Unknown Hospital";
 
+  if (loading) {
+    return (
+      <DashboardLayout title="System Admin Dashboard">
+        <div className="min-h-screen bg-gray-50">
+          <div className="mx-auto max-w-7xl px-4 py-6">
+            <div className="mb-6 flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+            </div>
+            <div className="space-y-3">
+              <div className="h-6 w-1/3 animate-pulse rounded bg-gray-200" />
+              <div className="h-24 animate-pulse rounded bg-gray-200" />
+              <div className="h-24 animate-pulse rounded bg-gray-200" />
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout title="System Admin Dashboard">
-      <div className="container mx-auto grid gap-6">
-        <div className="bg-white shadow rounded-lg p-4 mb-4">
+      <div className="min-h-screen bg-gray-50">
+        <div className="mx-auto max-w-7xl px-4 py-6">
+          <div className="mb-6 flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+          </div>
+          <div className="grid gap-6 transition-all duration-200">
+            <div className="container mx-auto grid gap-6 transition-all duration-200">
+        <Card className="mb-4">
           <h2 className="text-lg font-semibold mb-3">Create Hospital</h2>
           <form onSubmit={handleCreateHospital} className="grid gap-3">
-            <input
-              className="rounded border border-slate-200 px-3 py-2 text-sm"
+            <Input
+              className="text-sm"
               placeholder="Hospital name"
               name="name"
               value={hospitalForm.name}
               onChange={handleHospitalChange}
               required
             />
-            <input
-              className="rounded border border-slate-200 px-3 py-2 text-sm"
+            <Input
+              className="text-sm"
               placeholder="Address"
               name="address"
               value={hospitalForm.address}
               onChange={handleHospitalChange}
             />
-            <input
-              className="rounded border border-slate-200 px-3 py-2 text-sm"
+            <Input
+              className="text-sm"
               placeholder="Phone"
               name="phone"
               value={hospitalForm.phone}
               onChange={handleHospitalChange}
             />
-            <button
-              className="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-              disabled={creatingHospital}
-            >
-              {creatingHospital ? "Creating..." : "Create Hospital"}
-            </button>
+            <PrimaryButton className="text-sm" disabled={creatingHospital}>
+              {creatingHospital ? "Processing..." : "Create Hospital"}
+            </PrimaryButton>
           </form>
-        </div>
+        </Card>
 
-        <div className="bg-white shadow rounded-lg p-4 mb-4">
+        <Card className="mb-4">
           <h2 className="text-lg font-semibold mb-3">Hospital List</h2>
           {loadingHospitals ? (
             <p className="text-sm text-slate-500">Loading hospitals...</p>
           ) : hospitals.length === 0 ? (
-            <p className="text-sm text-slate-500">No hospitals created yet.</p>
+            <p className="text-sm text-gray-400">No hospitals created yet</p>
           ) : (
             <div className="grid gap-3">
               {hospitals.map((hospital) => (
@@ -153,21 +189,21 @@ const SystemAdminDashboard = () => {
               ))}
             </div>
           )}
-        </div>
+        </Card>
 
-        <div className="bg-white shadow rounded-lg p-4 mb-4">
+        <Card className="mb-4">
           <h2 className="text-lg font-semibold mb-3">Create Hospital Admin</h2>
           <form onSubmit={handleCreateHospitalAdmin} className="grid gap-3">
-            <input
-              className="rounded border border-slate-200 px-3 py-2 text-sm"
+            <Input
+              className="text-sm"
               placeholder="Full name"
               name="name"
               value={adminForm.name}
               onChange={handleAdminChange}
               required
             />
-            <input
-              className="rounded border border-slate-200 px-3 py-2 text-sm"
+            <Input
+              className="text-sm"
               placeholder="Email"
               type="email"
               name="email"
@@ -175,8 +211,8 @@ const SystemAdminDashboard = () => {
               onChange={handleAdminChange}
               required
             />
-            <input
-              className="rounded border border-slate-200 px-3 py-2 text-sm"
+            <Input
+              className="text-sm"
               placeholder="Password"
               type="password"
               name="password"
@@ -198,19 +234,16 @@ const SystemAdminDashboard = () => {
                 </option>
               ))}
             </select>
-            <button
-              className="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-              disabled={creatingAdmin}
-            >
-              {creatingAdmin ? "Creating..." : "Create Hospital Admin"}
-            </button>
+            <SecondaryButton className="text-sm" disabled={creatingAdmin}>
+              {creatingAdmin ? "Processing..." : "Create Hospital Admin"}
+            </SecondaryButton>
           </form>
-        </div>
+        </Card>
 
-        <div className="bg-white shadow rounded-lg p-4 mb-4">
+        <Card className="mb-4">
           <h2 className="text-lg font-semibold mb-3">Admin List</h2>
           {admins.length === 0 ? (
-            <p className="text-sm text-slate-500">No hospital admins yet.</p>
+            <p className="text-sm text-gray-400">No hospital admins yet</p>
           ) : (
             <div className="grid gap-3">
               {admins.map((admin) => (
@@ -218,6 +251,7 @@ const SystemAdminDashboard = () => {
                   <p className="font-semibold text-slate-900">
                     {formatName(admin.name || "Unknown")}
                   </p>
+                  <Badge color="blue">Admin</Badge>
                   <p className="text-sm text-slate-600">{admin.email}</p>
                   <p className="text-sm text-slate-600">
                     {admin.hospitalId ? hospitalNameById(admin.hospitalId) : "Unknown Hospital"}
@@ -226,6 +260,9 @@ const SystemAdminDashboard = () => {
               ))}
             </div>
           )}
+        </Card>
+            </div>
+          </div>
         </div>
       </div>
     </DashboardLayout>

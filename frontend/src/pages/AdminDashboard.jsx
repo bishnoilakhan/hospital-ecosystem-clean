@@ -13,6 +13,7 @@ import toast from "react-hot-toast";
 import StatsCard from "../components/StatsCard";
 import StatsSkeleton from "../components/StatsSkeleton";
 import { formatDoctorName, formatName } from "../utils/format";
+import { PrimaryButton, SecondaryButton, Input, Card, Badge } from "../components/ui";
 
 const AdminDashboard = () => {
   const { token } = useAuth();
@@ -49,6 +50,7 @@ const AdminDashboard = () => {
     medicalRecords: "—"
   });
   const [statsLoading, setStatsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   const handleChange = (event) => {
     setForm((prev) => ({ ...prev, [event.target.name]: event.target.value }));
@@ -180,9 +182,20 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    fetchStats();
-    fetchDoctors();
-    fetchUsers();
+    let isMounted = true;
+    const loadDashboard = async () => {
+      if (!token) {
+        if (isMounted) setLoading(false);
+        return;
+      }
+      setLoading(true);
+      await Promise.all([fetchStats(), fetchDoctors(), fetchUsers()]);
+      if (isMounted) setLoading(false);
+    };
+    loadDashboard();
+    return () => {
+      isMounted = false;
+    };
   }, [token]);
 
   const filteredUsers = users.filter((user) => {
@@ -199,9 +212,36 @@ const AdminDashboard = () => {
   const receptionistUsers = filteredUsers.filter((user) => user.role === "receptionist");
   const adminUsers = filteredUsers.filter((user) => user.role === "admin");
 
+  const getActiveColor = (active) => (active === false ? "gray" : "green");
+
+  if (loading) {
+    return (
+      <DashboardLayout title="Admin Dashboard">
+        <div className="min-h-screen bg-gray-50">
+          <div className="mx-auto max-w-7xl px-4 py-6">
+            <div className="mb-6 flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+            </div>
+            <div className="space-y-3">
+              <div className="h-6 w-1/3 animate-pulse rounded bg-gray-200" />
+              <div className="h-24 animate-pulse rounded bg-gray-200" />
+              <div className="h-24 animate-pulse rounded bg-gray-200" />
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout title="Admin Dashboard">
-      <div className="container mx-auto grid gap-6">
+      <div className="min-h-screen bg-gray-50">
+        <div className="mx-auto max-w-7xl px-4 py-6">
+          <div className="mb-6 flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+          </div>
+          <div className="grid gap-6 transition-all duration-200">
+            <div className="container mx-auto grid gap-6 transition-all duration-200">
         {!token && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
             Please log in as an admin to create doctor profiles.
@@ -234,8 +274,8 @@ const AdminDashboard = () => {
             <form onSubmit={handleCreateStaff} className="grid gap-4">
               <label className="text-sm text-slate-600">
                 Name
-                <input
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 text-slate-900"
+                <Input
+                  className="mt-1 text-slate-900"
                   name="name"
                   value={staffForm.name}
                   onChange={handleStaffChange}
@@ -244,8 +284,8 @@ const AdminDashboard = () => {
               </label>
               <label className="text-sm text-slate-600">
                 Email
-                <input
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 text-slate-900"
+                <Input
+                  className="mt-1 text-slate-900"
                   name="email"
                   type="email"
                   value={staffForm.email}
@@ -255,8 +295,8 @@ const AdminDashboard = () => {
               </label>
               <label className="text-sm text-slate-600">
                 Password
-                <input
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 text-slate-900"
+                <Input
+                  className="mt-1 text-slate-900"
                   name="password"
                   type="password"
                   value={staffForm.password}
@@ -277,16 +317,9 @@ const AdminDashboard = () => {
                   <option value="admin">Admin</option>
                 </select>
               </label>
-              <button
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                disabled={creatingStaff}
-              >
-                {creatingStaff ? (
-                  <div className="mx-auto h-4 w-4 animate-spin rounded-full border-b-2 border-white" />
-                ) : (
-                  "Create Staff"
-                )}
-              </button>
+              <PrimaryButton className="text-sm" disabled={creatingStaff}>
+                {creatingStaff ? "Processing..." : "Create Staff"}
+              </PrimaryButton>
             </form>
           </DashboardCard>
           <DashboardCard
@@ -312,8 +345,8 @@ const AdminDashboard = () => {
               </label>
               <label className="text-sm text-slate-600">
                 Department
-                <input
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 text-slate-900"
+                <Input
+                  className="mt-1 text-slate-900"
                   name="department"
                   value={form.department}
                   onChange={handleChange}
@@ -322,8 +355,8 @@ const AdminDashboard = () => {
               </label>
               <label className="text-sm text-slate-600">
                 Experience (years)
-                <input
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 text-slate-900"
+                <Input
+                  className="mt-1 text-slate-900"
                   type="number"
                   min="0"
                   name="experience"
@@ -334,39 +367,32 @@ const AdminDashboard = () => {
               </label>
               <label className="text-sm text-slate-600">
                 Availability
-                <input
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 text-slate-900"
+                <Input
+                  className="mt-1 text-slate-900"
                   name="availability"
                   value={form.availability}
                   onChange={handleChange}
                   required
                 />
               </label>
-              <button
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                disabled={submitting || !selectedDoctor}
-              >
-                {submitting ? (
-                  <div className="mx-auto h-4 w-4 animate-spin rounded-full border-b-2 border-white" />
-                ) : (
-                  "Create Profile"
-                )}
-              </button>
+              <PrimaryButton className="text-sm" disabled={submitting || !selectedDoctor}>
+                {submitting ? "Processing..." : "Create Profile"}
+              </PrimaryButton>
             </form>
           </DashboardCard>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+        <Card className="border border-gray-200 p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="text-lg font-semibold">User Management</h2>
           </div>
 
-          <input
+          <Input
             type="text"
             placeholder="Search users..."
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            className="mb-6 w-full rounded border border-slate-200 p-2 text-sm"
+            className="mb-6 text-sm"
           />
 
           <div className="grid gap-6">
@@ -386,8 +412,8 @@ const AdminDashboard = () => {
                   <tbody>
                     {doctorUsers.length === 0 ? (
                       <tr>
-                        <td colSpan="5" className="py-4 text-sm text-slate-500">
-                          No doctors found.
+                        <td colSpan="5" className="py-4 text-sm text-gray-400">
+                          No doctors found
                         </td>
                       </tr>
                     ) : (
@@ -396,7 +422,11 @@ const AdminDashboard = () => {
                           <td className="py-2">{formatName(user.name || "Unknown")}</td>
                           <td className="py-2">{(user.role || "—").toUpperCase()}</td>
                           <td className="py-2">{user.email || "—"}</td>
-                          <td className="py-2">{user.active === false ? "Disabled" : "Active"}</td>
+                          <td className="py-2">
+                            <Badge color={getActiveColor(user.active)}>
+                              {user.active === false ? "Disabled" : "Active"}
+                            </Badge>
+                          </td>
                           <td className="py-2">
                             <button
                               className="text-blue-600 hover:underline"
@@ -430,8 +460,8 @@ const AdminDashboard = () => {
                   <tbody>
                     {patientUsers.length === 0 ? (
                       <tr>
-                        <td colSpan="5" className="py-4 text-sm text-slate-500">
-                          No patients found.
+                        <td colSpan="5" className="py-4 text-sm text-gray-400">
+                          No patients found
                         </td>
                       </tr>
                     ) : (
@@ -440,7 +470,11 @@ const AdminDashboard = () => {
                           <td className="py-2">{formatName(user.name || "Unknown")}</td>
                           <td className="py-2">{(user.role || "—").toUpperCase()}</td>
                           <td className="py-2">{user.email || "—"}</td>
-                          <td className="py-2">{user.active === false ? "Disabled" : "Active"}</td>
+                          <td className="py-2">
+                            <Badge color={getActiveColor(user.active)}>
+                              {user.active === false ? "Disabled" : "Active"}
+                            </Badge>
+                          </td>
                           <td className="py-2">
                             <button
                               className="text-blue-600 hover:underline"
@@ -474,8 +508,8 @@ const AdminDashboard = () => {
                   <tbody>
                     {receptionistUsers.length === 0 ? (
                       <tr>
-                        <td colSpan="5" className="py-4 text-sm text-slate-500">
-                          No receptionists found.
+                        <td colSpan="5" className="py-4 text-sm text-gray-400">
+                          No receptionists found
                         </td>
                       </tr>
                     ) : (
@@ -484,7 +518,11 @@ const AdminDashboard = () => {
                           <td className="py-2">{formatName(user.name || "Unknown")}</td>
                           <td className="py-2">{(user.role || "—").toUpperCase()}</td>
                           <td className="py-2">{user.email || "—"}</td>
-                          <td className="py-2">{user.active === false ? "Disabled" : "Active"}</td>
+                          <td className="py-2">
+                            <Badge color={getActiveColor(user.active)}>
+                              {user.active === false ? "Disabled" : "Active"}
+                            </Badge>
+                          </td>
                           <td className="py-2">
                             <button
                               className="text-blue-600 hover:underline"
@@ -518,8 +556,8 @@ const AdminDashboard = () => {
                   <tbody>
                     {adminUsers.length === 0 ? (
                       <tr>
-                        <td colSpan="5" className="py-4 text-sm text-slate-500">
-                          No admins found.
+                        <td colSpan="5" className="py-4 text-sm text-gray-400">
+                          No admins found
                         </td>
                       </tr>
                     ) : (
@@ -528,7 +566,11 @@ const AdminDashboard = () => {
                           <td className="py-2">{formatName(user.name || "Unknown")}</td>
                           <td className="py-2">{(user.role || "—").toUpperCase()}</td>
                           <td className="py-2">{user.email || "—"}</td>
-                          <td className="py-2">{user.active === false ? "Disabled" : "Active"}</td>
+                          <td className="py-2">
+                            <Badge color={getActiveColor(user.active)}>
+                              {user.active === false ? "Disabled" : "Active"}
+                            </Badge>
+                          </td>
                           <td className="py-2">
                             <button
                               className="text-blue-600 hover:underline"
@@ -546,7 +588,7 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
       {editingUser && (
@@ -565,8 +607,8 @@ const AdminDashboard = () => {
             <form onSubmit={handleUpdateUser} className="grid gap-4">
               <label className="text-sm text-slate-600">
                 Name
-                <input
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 text-slate-900"
+                <Input
+                  className="mt-1"
                   name="name"
                   value={editForm.name}
                   onChange={handleEditChange}
@@ -575,8 +617,8 @@ const AdminDashboard = () => {
               </label>
               <label className="text-sm text-slate-600">
                 Email
-                <input
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 text-slate-900"
+                <Input
+                  className="mt-1"
                   name="email"
                   type="email"
                   value={editForm.email}
@@ -608,29 +650,25 @@ const AdminDashboard = () => {
                 Active
               </label>
               <div className="flex gap-3">
-                <button
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                  disabled={updatingUser}
-                  type="submit"
-                >
-                  {updatingUser ? (
-                    <div className="mx-auto h-4 w-4 animate-spin rounded-full border-b-2 border-white" />
-                  ) : (
-                    "Save Changes"
-                  )}
-                </button>
-                <button
+                <PrimaryButton className="text-sm" disabled={updatingUser} type="submit">
+                  {updatingUser ? "Processing..." : "Save Changes"}
+                </PrimaryButton>
+                <SecondaryButton
                   type="button"
-                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
+                  className="text-sm"
                   onClick={closeEditUser}
                 >
                   Cancel
-                </button>
+                </SecondaryButton>
               </div>
             </form>
           </div>
         </div>
       )}
+            </div>
+          </div>
+        </div>
+      </div>
     </DashboardLayout>
   );
 };

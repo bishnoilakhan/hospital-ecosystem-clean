@@ -19,6 +19,7 @@ import { getSymptomText } from "../utils/symptoms";
 import socket from "../socket";
 import EmergencyBadge from "../components/EmergencyBadge";
 import { getPriorityColor, getPriorityLabel, isEmergency } from "../utils/priority";
+import { PrimaryButton, SecondaryButton, Input, Card, Badge } from "../components/ui";
 
 const ReceptionDashboard = () => {
   const { token, hospitalId } = useAuth();
@@ -56,6 +57,7 @@ const ReceptionDashboard = () => {
   });
   const [statsLoading, setStatsLoading] = useState(true);
   const [hospitalName, setHospitalName] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const sortedTodayAppointments = [...todayAppointments].sort(
     (a, b) => (a.queueNumber || 0) - (b.queueNumber || 0)
@@ -235,10 +237,25 @@ const ReceptionDashboard = () => {
   };
 
   useEffect(() => {
-    fetchStats();
-    fetchDoctors();
-    fetchTodayAppointments();
-    fetchHospitalName();
+    let isMounted = true;
+    const loadDashboard = async () => {
+      if (!token) {
+        if (isMounted) setLoading(false);
+        return;
+      }
+      setLoading(true);
+      await Promise.all([
+        fetchStats(),
+        fetchDoctors(),
+        fetchTodayAppointments(),
+        fetchHospitalName()
+      ]);
+      if (isMounted) setLoading(false);
+    };
+    loadDashboard();
+    return () => {
+      isMounted = false;
+    };
   }, [token]);
 
   useEffect(() => {
@@ -362,9 +379,47 @@ const ReceptionDashboard = () => {
     }
   };
 
+  const getBadgeColor = (status) => {
+    switch (status) {
+      case "scheduled":
+        return "gray";
+      case "checked-in":
+        return "blue";
+      case "completed":
+        return "green";
+      default:
+        return "gray";
+    }
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout title="Reception Dashboard">
+        <div className="min-h-screen bg-gray-50">
+          <div className="mx-auto max-w-7xl px-4 py-6">
+            <div className="mb-6 flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+            </div>
+            <div className="space-y-3">
+              <div className="h-6 w-1/3 animate-pulse rounded bg-gray-200" />
+              <div className="h-24 animate-pulse rounded bg-gray-200" />
+              <div className="h-24 animate-pulse rounded bg-gray-200" />
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout title="Reception Dashboard">
-      <div className="container mx-auto grid gap-6">
+      <div className="min-h-screen bg-gray-50">
+        <div className="mx-auto max-w-7xl px-4 py-6">
+          <div className="mb-6 flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+          </div>
+          <div className="grid gap-6 transition-all duration-200">
+            <div className="container mx-auto grid gap-6 transition-all duration-200">
         {!token && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
             Please log in as a receptionist to manage appointments.
@@ -395,11 +450,11 @@ const ReceptionDashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+          <Card className="border border-gray-200 p-6">
             <h2 className="text-lg font-semibold mb-3">Search Patient</h2>
             <div className="grid gap-3">
-              <input
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              <Input
+                className="text-sm"
                 placeholder="Search patient by name or health ID"
                 value={patientQuery}
                 onChange={(event) => setPatientQuery(event.target.value)}
@@ -408,8 +463,8 @@ const ReceptionDashboard = () => {
                 {searchLoading ? (
                   <div className="text-sm text-gray-500">Searching...</div>
                 ) : patients.length === 0 ? (
-                  <div className="text-sm text-gray-500">
-                    {patientQuery.length > 2 ? "No patients found." : "Start typing to search."}
+                  <div className="text-sm text-gray-400">
+                    {patientQuery.length > 2 ? "No patients found" : "Start typing to search"}
                   </div>
                 ) : (
                   patients.map((patient) => (
@@ -444,13 +499,13 @@ const ReceptionDashboard = () => {
                 </div>
               )}
             </div>
-          </div>
+          </Card>
 
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+          <Card className="border border-gray-200 p-6">
             <h2 className="text-lg font-semibold mb-3">Register Walk-in Patient</h2>
             <form onSubmit={handleRegisterPatient} className="grid gap-3">
-              <input
-                className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              <Input
+                className="text-sm"
                 placeholder="Full name"
                 name="name"
                 value={registerForm.name}
@@ -458,8 +513,8 @@ const ReceptionDashboard = () => {
                 required
               />
               <div className="grid gap-3 md:grid-cols-2">
-                <input
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                <Input
+                  className="text-sm"
                   placeholder="Age"
                   name="age"
                   type="number"
@@ -468,8 +523,8 @@ const ReceptionDashboard = () => {
                   onChange={handleRegisterChange}
                   required
                 />
-                <input
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                <Input
+                  className="text-sm"
                   placeholder="Gender"
                   name="gender"
                   value={registerForm.gender}
@@ -478,16 +533,16 @@ const ReceptionDashboard = () => {
                 />
               </div>
               <div className="grid gap-3 md:grid-cols-2">
-                <input
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                <Input
+                  className="text-sm"
                   placeholder="Blood Group"
                   name="bloodGroup"
                   value={registerForm.bloodGroup}
                   onChange={handleRegisterChange}
                   required
                 />
-                <input
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                <Input
+                  className="text-sm"
                   placeholder="Phone"
                   name="phone"
                   value={registerForm.phone}
@@ -495,21 +550,14 @@ const ReceptionDashboard = () => {
                   required
                 />
               </div>
-              <button
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                disabled={registering}
-              >
-                {registering ? (
-                  <div className="mx-auto h-4 w-4 animate-spin rounded-full border-b-2 border-white" />
-                ) : (
-                  "Register Patient"
-                )}
-              </button>
+              <PrimaryButton className="text-sm" disabled={registering}>
+                {registering ? "Processing..." : "Register Patient"}
+              </PrimaryButton>
             </form>
-          </div>
+          </Card>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+        <Card className="border border-gray-200 p-6">
           <h2 className="text-lg font-semibold mb-3">Create Appointment</h2>
           <div className="grid gap-3">
             <div className="text-sm text-slate-600">
@@ -519,13 +567,13 @@ const ReceptionDashboard = () => {
               </span>
             </div>
             {!doctors || doctors.length === 0 ? (
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm text-gray-400 mt-2">
                 No doctors available in your hospital
               </p>
             ) : null}
             <div className="relative">
-              <input
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              <Input
+                className="text-sm"
                 placeholder="Search doctor by name or department"
                 value={doctorQuery}
                 onChange={(event) => setDoctorQuery(event.target.value)}
@@ -555,17 +603,17 @@ const ReceptionDashboard = () => {
                   </span>{" "}
                   — {formatDepartment(selectedDoctor.department || "N/A")}
                 </span>
-                <button
+                <SecondaryButton
                   type="button"
-                  className="text-xs font-semibold text-blue-600 hover:underline"
+                  className="text-xs px-2 py-1"
                   onClick={clearSelectedDoctor}
                 >
                   Clear
-                </button>
+                </SecondaryButton>
               </div>
             )}
-            <input
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            <Input
+              className="text-sm"
               type="datetime-local"
               name="date"
               value={appointmentForm.date}
@@ -590,32 +638,28 @@ const ReceptionDashboard = () => {
               <option value="8">High</option>
               <option value="10">Emergency</option>
             </select>
-            <button
-              className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+            <PrimaryButton
+              className={`text-sm ${
                 !selectedPatient || !selectedDoctor
-                  ? "cursor-not-allowed bg-gray-300 text-gray-600"
-                  : "bg-blue-600 text-white hover:bg-blue-700"
+                  ? "cursor-not-allowed bg-gray-300 hover:bg-gray-300 text-gray-600"
+                  : ""
               }`}
               disabled={creating || !selectedPatient || !selectedDoctor}
               onClick={handleCreateAppointment}
               type="button"
             >
-              {creating ? (
-                <div className="mx-auto h-4 w-4 animate-spin rounded-full border-b-2 border-white" />
-              ) : (
-                "Create Appointment"
-              )}
-            </button>
+              {creating ? "Processing..." : "Create Appointment"}
+            </PrimaryButton>
             {!selectedPatient || !selectedDoctor ? (
               <p className="text-xs text-slate-500">Select patient and doctor to continue.</p>
             ) : null}
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+        <Card className="border border-gray-200 p-6">
           <h2 className="text-lg font-semibold mb-4">Today's Queue</h2>
           {sortedTodayAppointments.length === 0 ? (
-            <p className="text-sm text-slate-500">No appointments scheduled today.</p>
+            <p className="text-sm text-gray-400">No appointments scheduled today</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -668,13 +712,9 @@ const ReceptionDashboard = () => {
                         {appointment.department || "General Medicine"}
                       </td>
                       <td className="py-2">
-                        <span
-                          className={`px-2 py-1 rounded text-xs ${getStatusStyle(
-                            appointment.status
-                          )}`}
-                        >
+                        <Badge color={getBadgeColor(appointment.status)}>
                           {appointment.status}
-                        </span>
+                        </Badge>
                         {appointment.status === "checked-in" && (
                           <span className="ml-2 rounded bg-green-100 px-2 py-1 text-xs font-semibold text-green-700">
                             Checked-in
@@ -711,6 +751,9 @@ const ReceptionDashboard = () => {
               </table>
             </div>
           )}
+        </Card>
+            </div>
+          </div>
         </div>
       </div>
     </DashboardLayout>
