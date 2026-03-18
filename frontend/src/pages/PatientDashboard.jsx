@@ -207,7 +207,8 @@ const PatientDashboard = () => {
     if (!token) return;
     try {
       const data = await getDoctors(token);
-      setDoctors(data.data || []);
+      console.log("DOCTORS:", data);
+      setDoctors(data || []);
       if (!appointmentForm.doctorId && data.data?.length) {
         setAppointmentForm((prev) => ({ ...prev, doctorId: data.data[0]._id }));
       }
@@ -536,7 +537,7 @@ const PatientDashboard = () => {
                 {doctors.length === 0 ? (
                   <option>No doctors available</option>
                 ) : (
-                  doctors.map((doctor) => (
+                  (doctors || []).map((doctor) => (
                     <option key={doctor._id} value={doctor._id}>
                       {formatDoctorName(doctor.userId?.name || "Unknown")} -{" "}
                       {doctor.department ? formatDepartment(doctor.department) : "N/A"}
