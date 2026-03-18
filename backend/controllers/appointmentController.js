@@ -253,6 +253,17 @@ const checkInPatient = async (req, res) => {
       return res.status(404).json({ message: "Appointment not found" });
     }
 
+    if (req.user.role === "receptionist") {
+      if (
+        !req.user.hospitalId ||
+        appointment.hospitalId.toString() !== req.user.hospitalId.toString()
+      ) {
+        return res.status(403).json({
+          message: "Not authorized for this hospital"
+        });
+      }
+    }
+
     if (appointment.status !== "scheduled") {
       return res.status(400).json({ message: "Appointment cannot be checked-in" });
     }
@@ -399,13 +410,23 @@ const callNextPatient = async (req, res) => {
 
 const getTodayAppointments = async (req, res) => {
   try {
+    const filter = {};
+
+    if (req.user.role === "receptionist") {
+      if (!req.user.hospitalId) {
+        return res.status(400).json({ message: "Hospital not found" });
+      }
+      filter.hospitalId = req.user.hospitalId;
+    }
+
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
     const appointments = await Appointment.find({
-      date: { $gte: todayStart, $lte: todayEnd }
+      date: { $gte: todayStart, $lte: todayEnd },
+      ...filter
     })
       .populate({
         path: "doctorId",
