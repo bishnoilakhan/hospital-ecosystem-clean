@@ -6,27 +6,22 @@ const Hospital = require("../models/Hospital");
 
 const getDoctors = async (req, res) => {
   try {
-    if (!req.user || !req.user.hospitalId) {
-      return res.status(403).json({
-        message: "Unauthorized: hospital context missing"
-      });
-    }
+    let query = {};
 
-    const userHospitalId = req.user?.hospitalId;
-
-    if (!userHospitalId) {
+    if (req.user.role === "patient") {
+      query = {};
+    } else if (req.user.hospitalId) {
+      query = { hospitalId: req.user.hospitalId };
+    } else {
       return res.status(400).json({ message: "User hospital not found" });
     }
 
-    const doctors = await Doctor.find({ hospitalId: userHospitalId }).populate(
-      "userId",
-      "name email"
-    );
+    const doctors = await Doctor.find(query).populate("userId", "name");
 
-    return res.status(200).json({ data: doctors });
+    return res.status(200).json(doctors);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Failed to fetch doctors" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
