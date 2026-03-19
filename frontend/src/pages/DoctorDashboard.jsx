@@ -628,8 +628,8 @@ const DoctorDashboard = () => {
           </div>
         )}
 
-        {!consultationMode && (
-          <div className="space-y-6">
+        {!consultationMode ? (
+  <div className="space-y-6">
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
@@ -950,14 +950,14 @@ const DoctorDashboard = () => {
             </Card>
 
             {showRecords && (
-  <Card className="p-6">
-    <div className="mb-3 flex items-center justify-between">
-      <h2 className="text-lg font-semibold text-slate-900">Medical Records</h2>
-      <button
-        type="button"
-        className="text-sm text-slate-500 hover:text-slate-700"
-        onClick={() => setShowRecords(false)}
-      >
+                <Card className="p-6">
+                <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-slate-900">Medical Records</h2>
+              <button
+              type="button"
+              className="text-sm text-slate-500 hover:text-slate-700"
+              onClick={() => setShowRecords(false)}
+               >
         Close
       </button>
     </div>
@@ -980,7 +980,7 @@ const DoctorDashboard = () => {
         ))}
       </div>
     )}
-  </Card>
+   </Card>
 )}
 
             {accessRequired && (
@@ -1011,11 +1011,9 @@ const DoctorDashboard = () => {
                 )}
               </div>
             )}
-          </div>
-        )}
-
-        {consultationMode && (
-          <div className="grid gap-6 lg:grid-cols-3">
+</div>
+) : (
+  <div className="grid gap-6 lg:grid-cols-3">
             {!selectedAppointment ? (
               <div className="col-span-3 mb-6 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
                 <p className="text-sm text-gray-500">Select a checked-in patient to begin.</p>
@@ -1221,7 +1219,8 @@ const DoctorDashboard = () => {
               </>
             )}
           </div>
-        )}
+        
+)}
             </div>
           </div>
         </div>
