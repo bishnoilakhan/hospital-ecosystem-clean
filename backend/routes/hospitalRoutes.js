@@ -6,7 +6,7 @@ const { authorizeRoles } = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
-router.post("/admin/hospitals", protect, authorizeRoles("admin"), createHospital);
+router.post("/admin/hospitals", protect, authorizeRoles("system_admin", "admin"), createHospital);
 router.get("/hospitals", protect, getHospitals);
 router.get("/hospitals/:id", protect, getHospitalById);
 
