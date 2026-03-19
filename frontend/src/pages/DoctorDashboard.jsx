@@ -950,37 +950,38 @@ const DoctorDashboard = () => {
             </Card>
 
             {showRecords && (
-              <Card className="p-6">
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-slate-900">Medical Records</h2>
-                  <button
-                    type="button"
-                    className="text-sm text-slate-500 hover:text-slate-700"
-                    onClick={() => setShowRecords(false)}
-                  >
-                    Close
-                  </button>
-                </div>
-                {records.length === 0 ? (
-                  <p className="text-sm text-gray-400">No records found</p>
-                ) : (
-                  <div className="grid gap-3">
-                    {records.map((record) => (
-                      <div key={record._id} className="border-b border-slate-100 py-3">
-                        <p className="text-sm">
-                          <span className="font-semibold">Diagnosis:</span>{" "}
-                          {record.diagnosis || "N/A"}
-                        </p>
-                        <p className="text-sm">
-                          <span className="font-semibold">Notes:</span>{" "}
-                          {record.notes || "N/A"}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+  <Card className="p-6">
+    <div className="mb-3 flex items-center justify-between">
+      <h2 className="text-lg font-semibold text-slate-900">Medical Records</h2>
+      <button
+        type="button"
+        className="text-sm text-slate-500 hover:text-slate-700"
+        onClick={() => setShowRecords(false)}
+      >
+        Close
+      </button>
+    </div>
+
+    {records.length === 0 ? (
+      <p className="text-sm text-gray-400">No records found</p>
+    ) : (
+      <div className="grid gap-3">
+        {records.map((record) => (
+          <div key={record._id} className="border-b border-slate-100 py-3">
+            <p className="text-sm">
+              <span className="font-semibold">Diagnosis:</span>{" "}
+              {record.diagnosis || "N/A"}
+            </p>
+            <p className="text-sm">
+              <span className="font-semibold">Notes:</span>{" "}
+              {record.notes || "N/A"}
+            </p>
+          </div>
+        ))}
+      </div>
+    )}
+  </Card>
+)}
 
             {accessRequired && (
               <div className="rounded-xl bg-yellow-100 border-l-4 border-yellow-500 p-4">
