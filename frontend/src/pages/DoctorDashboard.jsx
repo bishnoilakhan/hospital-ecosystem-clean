@@ -12,7 +12,6 @@ import {
   updateAppointmentPriority
 } from "../services/api";
 import DashboardLayout from "../components/DashboardLayout";
-import DashboardCard from "../components/DashboardCard";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 import StatsCard from "../components/StatsCard";
@@ -30,23 +29,88 @@ import { PrimaryButton, SecondaryButton, Input, Card, Badge } from "../component
 
 const API_BASE_URL = "https://hospital-ecosystem-clean-backend.onrender.com/api";
 
+// Constants
+const APPOINTMENT_STATUS = {
+  SCHEDULED: "scheduled",
+  CHECKED_IN: "checked-in",
+  COMPLETED: "completed"
+};
+
+const TABS = {
+  TODAY: "today",
+  UPCOMING: "upcoming",
+  PAST: "past"
+};
+
+const PRIORITY_LEVELS = {
+  LOW: 2,
+  MEDIUM: 5,
+  HIGH: 8,
+  EMERGENCY: 10
+};
+
+const EMPTY_MEDICINE_FORM = {
+  medicine: "",
+  dose: "",
+  frequency: "",
+  duration: ""
+};
+
+const DEFAULT_DEPARTMENT = "General Medicine";
+const ACCESS_CHECK_TIMEOUT = 30000; // 30 seconds
+const ACCESS_CHECK_INTERVAL = 10000; // 10 seconds
+const SEARCH_DEBOUNCE_MS = 300;
+
+// Utility functions
+const sortByPriorityAndQueue = (a, b) => {
+  const priorityDiff = (b.priorityScore || 0) - (a.priorityScore || 0);
+  if (priorityDiff !== 0) return priorityDiff;
+  return (a.queueNumber || 0) - (b.queueNumber || 0);
+};
+
+const getStatusStyle = (status) => {
+  switch (status) {
+    case APPOINTMENT_STATUS.SCHEDULED:
+      return "bg-gray-100 text-gray-700";
+    case APPOINTMENT_STATUS.CHECKED_IN:
+      return "bg-yellow-100 text-yellow-700";
+    case APPOINTMENT_STATUS.COMPLETED:
+      return "bg-green-100 text-green-700";
+    default:
+      return "bg-gray-100 text-gray-700";
+  }
+};
+
+const getBadgeColor = (status) => {
+  switch (status) {
+    case APPOINTMENT_STATUS.SCHEDULED:
+      return "gray";
+    case APPOINTMENT_STATUS.CHECKED_IN:
+      return "blue";
+    case APPOINTMENT_STATUS.COMPLETED:
+      return "green";
+    default:
+      return "gray";
+  }
+};
+
+const formatTime = (date) =>
+  date
+    ? new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : "Time not set";
+
 const DoctorDashboard = () => {
   const { token } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [currentPatient, setCurrentPatient] = useState(null);
   const [consultationMode, setConsultationMode] = useState(false);
-  const [activeTab, setActiveTab] = useState("today");
+  const [activeTab, setActiveTab] = useState(TABS.TODAY);
   const [diagnosis, setDiagnosis] = useState("");
   const [notes, setNotes] = useState("");
   const [medicines, setMedicines] = useState([]);
-  const [medicineForm, setMedicineForm] = useState({
-    medicine: "",
-    dose: "",
-    frequency: "",
-    duration: ""
-  });
-  const [selectedPriority, setSelectedPriority] = useState(5);
+  const [medicineForm, setMedicineForm] = useState(EMPTY_MEDICINE_FORM);
+  const [selectedPriority, setSelectedPriority] = useState(PRIORITY_LEVELS.MEDIUM);
   const [originalPriority, setOriginalPriority] = useState(null);
   const [isUpdatingPriority, setIsUpdatingPriority] = useState(false);
   const [records, setRecords] = useState([]);
@@ -103,57 +167,26 @@ const DoctorDashboard = () => {
     return (a.queueNumber || 0) - (b.queueNumber || 0);
   });
   const hasCurrentPatient = todaysAppointments.some(
-    (appointment) => appointment.status === "checked-in"
+    (appointment) => appointment.status === APPOINTMENT_STATUS.CHECKED_IN
   );
   const hasWaitingPatients = todaysAppointments.some(
-    (appointment) => appointment.status === "scheduled"
+    (appointment) => appointment.status === APPOINTMENT_STATUS.SCHEDULED
   );
   const disableCallNext = hasCurrentPatient || !hasWaitingPatients;
   const currentPatientInQueue = [...todaysAppointments]
-    .filter((appointment) => appointment.status === "checked-in")
+    .filter((appointment) => appointment.status === APPOINTMENT_STATUS.CHECKED_IN)
     .sort((a, b) => {
       const priorityDiff = (b.priorityScore || 0) - (a.priorityScore || 0);
       if (priorityDiff !== 0) return priorityDiff;
       return (a.queueNumber || 0) - (b.queueNumber || 0);
     })[0];
   const nextPatientInQueue = [...todaysAppointments]
-    .filter((appointment) => appointment.status === "scheduled")
+    .filter((appointment) => appointment.status === APPOINTMENT_STATUS.SCHEDULED)
     .sort((a, b) => {
       const priorityDiff = (b.priorityScore || 0) - (a.priorityScore || 0);
       if (priorityDiff !== 0) return priorityDiff;
       return (a.queueNumber || 0) - (b.queueNumber || 0);
     })[0];
-
-  const getStatusStyle = (status) => {
-    switch (status) {
-      case "scheduled":
-        return "bg-gray-100 text-gray-700";
-      case "checked-in":
-        return "bg-yellow-100 text-yellow-700";
-      case "completed":
-        return "bg-green-100 text-green-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
-
-  const getBadgeColor = (status) => {
-    switch (status) {
-      case "scheduled":
-        return "gray";
-      case "checked-in":
-        return "blue";
-      case "completed":
-        return "green";
-      default:
-        return "gray";
-    }
-  };
-
-  const formatTime = (date) =>
-    date
-      ? new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-      : "Time not set";
 
   const resetAccessState = () => {
     setRequestSent(false);
@@ -188,7 +221,7 @@ const DoctorDashboard = () => {
         doctorIdRef.current = appointmentsList[0]?.doctorId || doctorIdRef.current;
       }
       const checkedInCount = appointmentsList.filter(
-        (appointment) => appointment.status === "checked-in"
+        (appointment) => appointment.status === APPOINTMENT_STATUS.CHECKED_IN
       ).length;
       if (
         prevCheckedInCount.current !== null &&
@@ -240,13 +273,15 @@ const DoctorDashboard = () => {
       }
     };
 
-    fetchResults();
+    const timeoutId = setTimeout(fetchResults, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timeoutId);
   }, [search, token]);
 
   useEffect(() => {
     if (consultationMode || !appointments.length) return;
     const checkedInPatient = appointments.find(
-      (appointment) => appointment.status === "checked-in"
+      (appointment) => appointment.status === APPOINTMENT_STATUS.CHECKED_IN
     );
     setCurrentPatient(checkedInPatient || null);
   }, [appointments, consultationMode]);
@@ -254,7 +289,8 @@ const DoctorDashboard = () => {
   useEffect(() => {
     const emergencyPatient = appointments.find(
       (appointment) =>
-        isEmergency(appointment.priorityScore || 0) && appointment.status !== "completed"
+        isEmergency(appointment.priorityScore || 0) &&
+        appointment.status !== APPOINTMENT_STATUS.COMPLETED
     );
 
     if (emergencyPatient && emergencyPatient._id !== emergencyAlertRef.current) {
@@ -269,9 +305,9 @@ const DoctorDashboard = () => {
 
   useEffect(() => {
     if (consultationMode) return;
-    if (activeTab === "today") return;
-    if (appointments.some((appointment) => appointment.status === "checked-in")) {
-      setActiveTab("today");
+    if (activeTab === TABS.TODAY) return;
+    if (appointments.some((appointment) => appointment.status === APPOINTMENT_STATUS.CHECKED_IN)) {
+      setActiveTab(TABS.TODAY);
     }
   }, [appointments, consultationMode, activeTab]);
 
@@ -369,8 +405,8 @@ const DoctorDashboard = () => {
     setWaitingLong(false);
     accessTimeoutRef.current = setTimeout(() => {
       setWaitingLong(true);
-    }, 30000);
-    accessIntervalRef.current = setInterval(tryFetchRecords, 10000);
+    }, ACCESS_CHECK_TIMEOUT);
+    accessIntervalRef.current = setInterval(tryFetchRecords, ACCESS_CHECK_INTERVAL);
 
     return () => {
       if (accessIntervalRef.current) {
@@ -405,7 +441,7 @@ const DoctorDashboard = () => {
       setDiagnosis("");
       setNotes("");
       setMedicines([]);
-      setMedicineForm({ medicine: "", dose: "", frequency: "", duration: "" });
+      setMedicineForm(EMPTY_MEDICINE_FORM);
     } catch (error) {
       toast.error("Something went wrong");
     } finally {
@@ -420,7 +456,7 @@ const DoctorDashboard = () => {
   const handleAddMedicine = () => {
     if (!medicineForm.medicine) return;
     setMedicines((prev) => [...prev, medicineForm]);
-    setMedicineForm({ medicine: "", dose: "", frequency: "", duration: "" });
+    setMedicineForm(EMPTY_MEDICINE_FORM);
   };
 
   const removeMedicine = (index) => {
@@ -434,8 +470,8 @@ const DoctorDashboard = () => {
     setDiagnosis("");
     setNotes("");
     setMedicines([]);
-    setMedicineForm({ medicine: "", dose: "", frequency: "", duration: "" });
-    const initialPriority = appointment.priorityScore ?? 5;
+    setMedicineForm(EMPTY_MEDICINE_FORM);
+    const initialPriority = appointment.priorityScore ?? PRIORITY_LEVELS.MEDIUM;
     setSelectedPriority(initialPriority);
     setOriginalPriority(initialPriority);
   };
@@ -645,22 +681,22 @@ const DoctorDashboard = () => {
               <button
                 type="button"
                 className={`rounded px-4 py-2 text-sm font-semibold ${
-                  activeTab === "upcoming"
+                  activeTab === TABS.UPCOMING
                     ? "bg-blue-600 text-white"
                     : "bg-gray-200 text-gray-700"
                 }`}
-                onClick={() => handleTabChange("upcoming")}
+                onClick={() => handleTabChange(TABS.UPCOMING)}
               >
                 Upcoming
               </button>
               <button
                 type="button"
                 className={`rounded px-4 py-2 text-sm font-semibold ${
-                  activeTab === "past"
+                  activeTab === TABS.PAST
                     ? "bg-blue-600 text-white"
                     : "bg-gray-200 text-gray-700"
                 }`}
-                onClick={() => handleTabChange("past")}
+                onClick={() => handleTabChange(TABS.PAST)}
               >
                 Past
               </button>
@@ -791,7 +827,6 @@ const DoctorDashboard = () => {
                         {todaysAppointmentsSorted.map((appointment) => (
                           <motion.div
                             key={appointment._id}
-                            layout
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
@@ -837,7 +872,7 @@ const DoctorDashboard = () => {
                 </div>
               )}
 
-              {activeTab === "upcoming" && (
+              {activeTab === TABS.UPCOMING && (
                 <Card className="p-6">
                   <h2 className="mb-4 text-lg font-semibold text-slate-900">
                     {formatLabel("Upcoming Appointments")}
@@ -871,7 +906,7 @@ const DoctorDashboard = () => {
                 </Card>
               )}
 
-              {activeTab === "past" && (
+              {activeTab === TABS.PAST && (
                 <Card className="p-6">
                   <h2 className="mb-4 text-lg font-semibold text-slate-900">
                     {formatLabel("Past Appointments")}
